@@ -1,3 +1,4 @@
+
 /*This file implements MTK boot mode.*/
 
 #include <sys/types.h>
@@ -30,36 +31,52 @@ void boot_mode_menu_select()
 	const char* title_msg = "Select Boot Mode\nPress VOL+/VOL- to move up/down\nPress ESC to select\n\n";
 	int timeout = 8000;
 	int autoBootInterrupted = 0;
+	int boot_selected = 0;
 
   char *boot2;
 	char *boot3;
 	char *boot4;
 
-	partition_get_name(38, &boot2);
- 	partition_get_name(41, &boot3);
-	partition_get_name(42, &boot4);
+	partition_get_name(PART_BOOT2_NUM, &boot2);
+ 	partition_get_name(PART_BOOT3_NUM, &boot3);
+	partition_get_name(PART_BOOT4_NUM, &boot4);
 
 #ifdef MACH_FPGA_NO_DISPLAY
 	g_boot_mode = RECOVERY_BOOT;
 	return ;
 #endif
 	video_clean_screen();
-	while (1) {
-		if (mtk_detect_key(MT65XX_MENU_SELECT_KEY)) {
-		    select--;
-		    if (select < 0)
-				     select = 5;
-		    refreshOptions = 1;
-		    autoBootInterrupted = 1;
-		}
+	int vol_up_pressed = 0;
+	int vol_down_pressed = 0;
+	while (boot_selected == 0) {
 
-		if (!mt_get_gpio_in(GPIO11 | 0x80000000)) {
-		     select++;
-		     if (select == 6)
-		 		    select = 0;
-		     refreshOptions = 1;
-		     autoBootInterrupted = 1;
+		if (mtk_detect_key(MT65XX_MENU_SELECT_KEY)) {
+			if (vol_down_pressed == 0) {
+			    select--;
+			    if (select < 0)
+					     select = 5;
+			    refreshOptions = 1;
+			    autoBootInterrupted = 1;
+					vol_down_pressed = 1;
+			}
 		}
+		else
+			vol_down_pressed = 0;
+		if (!mt_get_gpio_in(GPIO11 | 0x80000000)) {
+			if (vol_up_pressed == 0) {
+			     select++;
+			     if (select == 6)
+			 		    select = 0;
+			     refreshOptions = 1;
+			     autoBootInterrupted = 1;
+					 vol_up_pressed = 1;
+			}
+		}
+		else
+			vol_up_pressed = 0;
+
+		if (mtk_detect_key(8))
+				boot_selected = 1;
 
 		if (refreshOptions) {
 		    refreshOptions = 0;
@@ -145,18 +162,15 @@ void boot_mode_menu_select()
 		    }
 		}
 
-		if (mtk_detect_key(8))
-		    break;
-
-		mdelay(200);
-		timeout -=200;
+		mdelay(50);
+		timeout -= 50;
+		if (timeout % 1000 == 0 && !autoBootInterrupted)
+			  refreshOptions = 1;
 
 		if (timeout < 0 && !autoBootInterrupted) {
 		    select = 0;
-		    break;
+				boot_selected = 1;
 		}
-		if (!autoBootInterrupted && (timeout % 1000 == 0))
-		    refreshOptions = 1;
 	}
 	if (select == 0) {
 		g_boot_mode = NORMAL_BOOT;
@@ -165,9 +179,11 @@ void boot_mode_menu_select()
 	} else if (select == 2) {
 		g_boot_mode = RECOVERY_BOOT2;
 	} else if (select == 3) {
-		g_boot_mode = NORMAL_BOOT3;
+		g_boot_mode = NORMAL_BOOT;
+		advancedBootMode = NORMAL_BOOT3;
 	} else if (select == 4) {
-		g_boot_mode = NORMAL_BOOT4;
+		g_boot_mode = NORMAL_BOOT;
+		advancedBootMode = NORMAL_BOOT4;
 	} else if (select == 5) {
   	g_boot_mode = FASTBOOT;
   } else {

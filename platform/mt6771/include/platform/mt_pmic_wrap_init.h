@@ -227,9 +227,9 @@ extern signed int pwrap_init(void);
 #define WACS_SYNC_BUSY              (0x00)
 
 /**** timeout time, unit :us ***********/
-#define TIMEOUT_RESET           (0xFF)
-#define TIMEOUT_READ            (0xFF)
-#define TIMEOUT_WAIT_IDLE       (0x7FF)
+#define TIMEOUT_RESET           (0x2710) /* 10000us */
+#define TIMEOUT_READ            (0x2710) /* 10000us */
+#define TIMEOUT_WAIT_IDLE       (0x2710) /* 10000us */
 
 /*-----macro for manual commnd ---------------------------------*/
 #define OP_WR    (0x1)

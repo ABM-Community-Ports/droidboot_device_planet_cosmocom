@@ -178,6 +178,7 @@ struct mmu_initial_mapping mmu_initial_mappings[] = {
 
 BOOT_ARGUMENT *g_boot_arg;
 BOOT_ARGUMENT boot_addr;
+extern int advancedBootMode;
 int g_nr_bank;
 BI_DRAM bi_dram[MAX_NR_BANK];
 unsigned int g_fb_base;
@@ -311,7 +312,7 @@ int dram_init(void)
 #endif
 				 case BOOT_TAG_EMMC_PART_NUM:
                      memcpy(&g_boot_arg->emmc_part_num, &tags->u.emmc_part_num.emmc_part_num, sizeof(tags->u.emmc_part_num.emmc_part_num));
-                     break; 
+                     break;
 				default:
 					break;
 			}
@@ -423,15 +424,15 @@ void sw_env()
 			//if(g_boot_arg->boot_reason != BR_RTC && get_env("hibboot") != NULL && atoi(get_env("hibboot")) == 1)
 			if (get_env("hibboot") != NULL && atoi(get_env("hibboot")) == 1)
 				video_printf(" => HIBERNATION BOOT\n");
-			else
+			else {
+			    if (advancedBootMode == NORMAL_BOOT3)
+				video_printf(" => BOOT 3\n");
+			    else if (advancedBootMode == NORMAL_BOOT4)
+	                        video_printf(" => BOOT 4\n");
+			    else
 				video_printf(" => NORMAL BOOT\n");
+			}
 			break;
-		case NORMAL_BOOT3:
-			video_printf(" => BOOT 3\n");
-			break;
-                case NORMAL_BOOT4:
-                        video_printf(" => BOOT 4\n");
-                        break;
 		case ADVMETA_BOOT:
 			video_printf(" => ADVANCED META MODE\n");
 			break;
@@ -688,8 +689,8 @@ void platform_init(void)
 	PROFILING_END();
 #endif // MACH_FPGA
 
-if(kernel_charging_boot() != 1 && g_boot_mode != ALARM_BOOT && 
-    g_boot_mode != KERNEL_POWER_OFF_CHARGING_BOOT && g_boot_mode != LOW_POWER_OFF_CHARGING_BOOT) { 
+if(kernel_charging_boot() != 1 && g_boot_mode != ALARM_BOOT &&
+    g_boot_mode != KERNEL_POWER_OFF_CHARGING_BOOT && g_boot_mode != LOW_POWER_OFF_CHARGING_BOOT) {
       pmic_set_register_value(PMIC_RG_VIBR_VOSEL,0x5);
       pmic_set_register_value(PMIC_RG_LDO_VIBR_EN,1);
       mdelay(200);
@@ -750,7 +751,7 @@ if(kernel_charging_boot() != 1 && g_boot_mode != ALARM_BOOT &&
 	/* reload dtb when boot mode = recovery */
 	if ((g_boot_mode == RECOVERY_BOOT || g_boot_mode == RECOVERY_BOOT2) && (get_recovery_dtbo_loaded() != 1)){
 		if (g_boot_mode == RECOVERY_BOOT2) {
-			partition_get_name(38, &bootp);
+			partition_get_name(PART_BOOT2_NUM, &bootp);
 			if (bldr_load_dtb(bootp) < 0)
 				dprintf(CRITICAL, "bldr_load_dtb fail\n");
 		}
@@ -759,13 +760,13 @@ if(kernel_charging_boot() != 1 && g_boot_mode != ALARM_BOOT &&
                                 dprintf(CRITICAL, "bldr_load_dtb fail\n");
 		}
 	}
-	if (g_boot_mode == NORMAL_BOOT3) {
-		partition_get_name(41, &bootp);
+	if (advancedBootMode == NORMAL_BOOT3) {
+		partition_get_name(PART_BOOT3_NUM, &bootp);
 		if (bldr_load_dtb(bootp) < 0)
 			dprintf(CRITICAL, "bldr_load_dtb fail\n");
 	}
-	if (g_boot_mode == NORMAL_BOOT4) {
-		partition_get_name(42, &bootp);
+	if (advancedBootMode == NORMAL_BOOT4) {
+		partition_get_name(PART_BOOT4_NUM, &bootp);
 		if (bldr_load_dtb(bootp) < 0)
 			dprintf(CRITICAL, "bldr_load_dtb fail\n");
 	}
@@ -1132,4 +1133,3 @@ int is_meta_log_disable(void)
 {
 	return g_boot_arg->meta_log_disable;
 }
-

@@ -110,5 +110,6 @@ int write_primary_gpt(void *data, unsigned sz);
 int write_secondary_gpt(void *data, unsigned sz);
 int read_gpt(part_t *part);
 void mt_part_dump(void);
+u64 last_lba(u32 part_id);
 #endif
 #endif /* __PART_INTERFACE_H__ */

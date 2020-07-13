@@ -1,4 +1,5 @@
 
+
 /*
  * Copyright (c) 2008-2009 Travis Geiselbrecht
  *
@@ -49,6 +50,7 @@ extern  int unshield_recovery_detection(void);
 extern  void mtk_wdt_disable(void);
 extern  void boot_mode_menu_select();
 BOOTMODE g_boot_mode = NORMAL_BOOT;
+int advancedBootMode = NORMAL_BOOT;
 #ifdef MTK_KERNEL_POWER_OFF_CHARGING
 extern BOOL kernel_power_off_charging_detection(void);
 #endif
@@ -284,7 +286,7 @@ void boot_mode_select(void)
 #endif
 
   char *userdataPartition;
-	partition_get_name(38, &userdataPartition);
+	partition_get_name(PART_BOOT2_NUM, &userdataPartition);
 	if (strcmp(userdataPartition, "userdata") == 0)
 		dprintf(CRITICAL, "Detected single-boot Cosmo - partition 38: %s\n", userdataPartition);
 	else {

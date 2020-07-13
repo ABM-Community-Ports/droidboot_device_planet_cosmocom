@@ -46,7 +46,7 @@
 extern bool cmdline_append(const char *append_string);
 static part_t *g_part_ptr = NULL;
 u32 sgpt_partition_lba_size;
-
+static u64 g_gpt_entry_cnt = 0;
 /*
  ********** Definition of Debug Macro **********
  */
@@ -99,9 +99,13 @@ static void w2s(u8 *dst, int dst_max, u16 *src, int src_max)
 	return;
 }
 
+u64 get_entry_count()
+{
+	return g_gpt_entry_cnt;
+}
 extern u64 g_emmc_user_size;
 
-static u64 last_lba(u32 part_id)
+u64 last_lba(u32 part_id)
 {
 	part_dev_t *dev;
 	dev = mt_part_get_device();
@@ -371,7 +375,8 @@ static int parse_gpt_header(u32 part_id, u64 header_lba, u8 *header_buf, u8 *ent
 			g_part_ptr[i].start_sect, g_part_ptr[i].nr_sects,
 			g_part_ptr[i].info ? (char *)g_part_ptr[i].info->uuid : "");
 	}
-
+	// record the total entry count
+	g_gpt_entry_cnt = i;
 	return 0;
 }
 

@@ -362,22 +362,48 @@ unsigned int write_partition(unsigned size, unsigned char *partition)
 int part_init(part_dev_t *dev)
 {
 	part_t *part_ptr;
-
+	part_t *part_pgpt, *part_sgpt;
+	int offset = 0;
+	struct part_meta_info *info;
 	pal_log_err(PART_COMMON_TAG"[partition init]\n");
 #ifdef MTK_AB_OTA_UPDATER
 	int predef_part_num = 3; // preloader, preloader_a, preloader_b
 #else
 	int predef_part_num = 1; // preloader
 #endif
-	part_ptr = (part_t *) calloc(PART_MAX_COUNT + predef_part_num, sizeof(part_t));
+	part_ptr = (part_t *) calloc(PART_MAX_COUNT + predef_part_num + 2/*pgpt and spgt*/, sizeof(part_t));
 	if (!part_ptr)
 		return -1;
 
 	g_partition_all = part_ptr;
-	partition = part_ptr + predef_part_num;
-
+	partition = part_ptr + predef_part_num + 1 /*pgpt*/;
 	partition->part_id = dev->blkdev->part_user;
 	read_gpt(partition);
+	// add pgpt in global partition arrary
+	part_pgpt = part_ptr + predef_part_num;
+	part_pgpt->start_sect = 0x0;
+	part_pgpt->nr_sects = partition_get_offset(predef_part_num + 1)/ dev->blkdev->blksz;
+	part_pgpt->part_id = dev->blkdev->part_user;
+	info = malloc(sizeof(*info));
+	if (!info) {
+		pal_log_err(PART_COMMON_TAG"[PART_INIT]lacking of memory\n");
+		return -1;
+	}
+	part_pgpt->info = info;
+	snprintf((char*)part_pgpt->info->name, strlen("pgpt")+1, "%s", "pgpt");
+	// add sgpt in global partition arrary
+	offset = get_entry_count() + predef_part_num + 1;
+	part_sgpt = part_ptr + offset;
+	part_sgpt->start_sect = (partition_get_offset(offset -1) + partition_get_size(offset-1))/ dev->blkdev->blksz;
+	part_sgpt->nr_sects = last_lba(dev->blkdev->part_user) - part_sgpt->start_sect + 1;
+	part_sgpt->part_id = dev->blkdev->part_user;
+	info = malloc(sizeof(*info));
+	if (!info) {
+		pal_log_err(PART_COMMON_TAG"[PART_INIT]lacking of memory\n");
+		return -1;
+	}
+	part_sgpt->info = info;
+	snprintf((char*)part_sgpt->info->name, strlen("sgpt")+1, "%s", "sgpt");
 
 	// set pre-defined partition entry for active preloader
 	g_partition_all[0].start_sect = 0x0;
@@ -422,6 +448,7 @@ int part_init(part_dev_t *dev)
 	if (g_partition_all[2].info)
 		snprintf((char*)g_partition_all[2].info->name, strlen("preloader_b")+1, "%s", "preloader_b");
 #endif
+
 	return 0;
 }
 

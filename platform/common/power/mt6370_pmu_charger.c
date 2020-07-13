@@ -468,6 +468,94 @@ static int mt6370_enable_wdt(struct mt6370_pmu_charger_info *info,
 	return ret;
 }
 
+static int mt6370_check_icc_accuracy(struct mt6370_pmu_charger_info *info)
+{
+	int ret = 0, tm_try_leave_cnt = 2;
+	u8 data;
+
+	dprintf(CRITICAL, "%s\n", __func__);
+
+	/* only need trim icc for MT6371 */
+	if (info->vendor_id != 0xf0)
+		return 0;
+
+	/* check need icc trim or not */
+	ret = mt6370_i2c_read_byte(info, MT6370_PMU_REG_TM_INF, &data);
+	if (ret < 0)
+		return ret;
+	if (data & 0x40) {
+		dprintf(CRITICAL, "%s: no need icc trim\n", __func__);
+		return ret;
+	}
+
+	/* Enter test mode */
+	ret = mt6370_i2c_block_write(info, 0xF0,
+		ARRAY_SIZE(mt6370_val_en_test_mode), mt6370_val_en_test_mode);
+	if (ret != I2C_OK) {
+		dprintf(CRITICAL, "%s: enter test mode fail\n", __func__);
+		return ret;
+	}
+
+	mdelay(1);
+
+	ret = mt6370_i2c_write_byte(info, 0xFF, 0x69);
+	if (ret != I2C_OK) {
+		dprintf(CRITICAL, "%s: enter test mode part fail\n", __func__);
+		goto out;
+	}
+
+	mdelay(1);
+
+	/* update icc-1A trim code */
+	ret = mt6370_i2c_read_byte(info, MT6370_TM_REG_ICC_1A, &data);
+	if (ret != I2C_OK) {
+		dprintf(CRITICAL, "%s: read icc trim fail\n", __func__);
+		goto out;
+	} else
+		dprintf(CRITICAL, "%s: reg0x%02x = 0x%02x\n",
+			__func__, MT6370_TM_REG_ICC_1A, data);
+
+	if (data + 7 > 255)
+		data = 255;
+	else
+		data += 7;
+
+	ret = mt6370_i2c_write_byte(info, MT6370_TM_REG_ICC_1A, data);
+	if (ret != I2C_OK) {
+		dprintf(CRITICAL,
+			"%s: write icc trim fail\n", __func__);
+		goto out;
+	}
+
+	mdelay(1);
+
+	ret = mt6370_i2c_read_byte(info, MT6370_TM_REG_ICC_1A, &data);
+	if (ret < 0)
+		goto out;
+	else
+		dprintf(CRITICAL, "%s: read tm reg0x%02x is 0x%02x\n",
+			__func__, MT6370_TM_REG_ICC_1A, data);
+
+	/* update trim complete flag */
+	ret = mt6370_set_bit(info, MT6370_TM_REG_TM_INF, 0x80);
+	if (ret < 0)
+		dprintf(CRITICAL,
+			"%s: update trim complete flag fail\n", __func__);
+
+	mdelay(1);
+out:
+	do {
+		ret = mt6370_i2c_write_byte(info, 0xF0, 0x00);
+		if (ret != I2C_OK) {
+			dprintf(CRITICAL, "%s: leave tm fail\n", __func__);
+			tm_try_leave_cnt--;
+		} else
+			break;
+	} while (tm_try_leave_cnt > 0);
+
+	return ret;
+}
+
 static int mt6370_enable_vsys_short_protect(struct mt6370_pmu_charger_info *info)
 {
 	int ret = 0, tm_try_leave_cnt = 2;
@@ -557,6 +645,10 @@ static int mt6370_chg_init_setting(struct mt6370_pmu_charger_info *info)
 	if (ret < 0)
 		dprintf(CRITICAL, "%s: enable vsys short protect fail\n",
 			__func__);
+
+	ret = mt6370_check_icc_accuracy(info);
+	if (ret < 0)
+		dprintf(CRITICAL, "%s: check icc accuracy fail\n", __func__);
 
 	/* Select input current limit to referenced from AICR */
 	ret = mt6370_select_input_current_limit(info,

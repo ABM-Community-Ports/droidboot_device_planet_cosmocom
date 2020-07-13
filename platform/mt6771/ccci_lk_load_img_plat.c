@@ -1026,7 +1026,7 @@ long long plat_ccci_get_ld_md_plat_setting(char cfg_name[])
 #ifdef DUMMY_AP_MODE
 		return 0xA0000000LL;
 #endif
-		return 0xC0000000LL;
+		return 0xA0000000LL;
 	}
 
 	if (strcmp(cfg_name, "ro_rw_mem_align") == 0)

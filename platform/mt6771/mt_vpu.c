@@ -96,7 +96,7 @@ extern void mtk_wdt_restart(void);
 
 #define MODULE_NAME "LK_BOOT_VPU"
 #define VPU_DRAM_ADDR_ALIGN    (0x00010000)
-#define VPU_DRAM_ADDR_MAX      (0xC0000000)
+#define VPU_DRAM_ADDR_MAX      (0xA0000000)
 #define VPU_DRAM_SIZE          (0x02A10000)              // total ddr size we apply for vpu
 #define VPU_DRAM_PROG_OFFSET   (0x00100000)              // start address of main program (core0)
 #define VPU_DRAM_ALGO_OFFSET   (0x00C00000)              // start address of algo, after 3*(reset vector+main program)

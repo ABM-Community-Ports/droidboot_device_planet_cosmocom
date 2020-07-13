@@ -670,20 +670,20 @@ int target_fdt_model(void *fdt)
 			if(CAP_IS_C(cap)) {
 				if(CAP_IS_B(cap)) {
 					model_name = "MT6762V/CN";
-					if (platform_type)
-						model_name = "MT8768CB";
 				} else if(CAP_IS_A(cap)) {
 					model_name = "MT6762V/CM";
+					if (platform_type)
+						model_name = "MT8768CB";
 				} else {
 					model_name = "MT6762M";
 				}
 			} else {
 				if(CAP_IS_B(cap)) {
 					model_name = "MT6762V/WN";
-					if (platform_type)
-						model_name = "MT8768WB";
 				} else if(CAP_IS_A(cap)) {
 					model_name = "MT6762V/WM";
+					if (platform_type)
+						model_name = "MT8768WB";
 				} else {
 					model_name = "MT6762M";
 				}
@@ -718,6 +718,8 @@ int target_fdt_model(void *fdt)
 			if(CAP_IS_C(cap)) {
 				if(CAP_IS_B(cap)) {
 					model_name = "MT6762V/CR";
+					if (platform_type)
+						model_name = "MT8768CD";
 				} else if(CAP_IS_A(cap)) {
 					model_name = "MT6762V/CS";
 				} else {
@@ -726,6 +728,8 @@ int target_fdt_model(void *fdt)
 			} else {
 				if(CAP_IS_B(cap)) {
 					model_name = "MT6762V/WR";
+					if (platform_type)
+						model_name = "MT8768WD";
 				} else if(CAP_IS_A(cap)) {
 					model_name = "MT6762V/WS";
 				} else {

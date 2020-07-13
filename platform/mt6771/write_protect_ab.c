@@ -94,7 +94,7 @@ int set_write_protect(void)
 #endif /* MTK_UFS_OTP */
 
 #if defined(MTK_POWER_ON_WRITE_PROTECT)
-	if (g_boot_mode == NORMAL_BOOT || g_boot_mode == NORMAL_BOOT3 || g_boot_mode == NORMAL_BOOT4) {
+	if (g_boot_mode == NORMAL_BOOT) {
 		pal_log_info("[%s] Lock boot region \n", __func__);
 		err = partition_write_prot_set("preloader", "preloader", WP_POWER_ON);
 

@@ -182,6 +182,8 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
     const AvbDescriptor* descriptor,
     AvbSlotVerifyData* slot_data) {
   AvbHashDescriptor hash_desc;
+  AvbSHA256Ctx sha256_ctx;
+  AvbSHA512Ctx sha512_ctx;
   const uint8_t* desc_partition_name = NULL;
   const uint8_t* desc_salt;
   const uint8_t* desc_digest;
@@ -294,14 +296,12 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
   }
 
   if (avb_strcmp((const char*)hash_desc.hash_algorithm, "sha256") == 0) {
-    AvbSHA256Ctx sha256_ctx;
     avb_sha256_init(&sha256_ctx);
     avb_sha256_update(&sha256_ctx, desc_salt, hash_desc.salt_len);
     avb_sha256_update(&sha256_ctx, image_buf, hash_desc.image_size);
     digest = avb_sha256_final(&sha256_ctx);
     digest_len = AVB_SHA256_DIGEST_SIZE;
   } else if (avb_strcmp((const char*)hash_desc.hash_algorithm, "sha512") == 0) {
-    AvbSHA512Ctx sha512_ctx;
     avb_sha512_init(&sha512_ctx);
     avb_sha512_update(&sha512_ctx, desc_salt, hash_desc.salt_len);
     avb_sha512_update(&sha512_ctx, image_buf, hash_desc.image_size);
@@ -473,7 +473,7 @@ static AvbSlotVerifyResult load_and_verify_vbmeta(
   char full_partition_name[AVB_PART_NAME_MAX_SIZE];
   AvbSlotVerifyResult ret;
   AvbIOResult io_ret;
-  size_t vbmeta_offset;
+  int64_t vbmeta_offset;
   size_t vbmeta_size;
   uint8_t* vbmeta_buf = NULL;
   size_t vbmeta_num_read;
@@ -566,7 +566,7 @@ static AvbSlotVerifyResult load_and_verify_vbmeta(
       goto out;
     }
 
-    vbmeta_offset = footer.vbmeta_offset;
+    vbmeta_offset = (int64_t)footer.vbmeta_offset;
     vbmeta_size = footer.vbmeta_size;
   }
 

@@ -43,6 +43,7 @@
 #include "mtk_charger.h"
 #include "mtk_charger_intf.h"
 #include "mt6370_pmu_charger.h"
+#include "bq25601.h"
 #include "mt6360_pmu_charger.h"
 
 #define MAX_MCHR_INFO_SIZE	2
@@ -51,6 +52,9 @@ static struct mtk_charger_info *mchr_info_list[MAX_MCHR_INFO_SIZE];
 static int (*mtk_charger_init_list[])(void) = {
 	mt6370_chg_probe,
 	mt6360_chg_probe,
+#if defined(MTK_BQ25601_SUPPORT)
+	bq25601_chg_probe,
+#endif
 };
 
 void __attribute__((weak)) charger_driver_init(void)

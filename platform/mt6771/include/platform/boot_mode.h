@@ -442,6 +442,7 @@ struct boot_tag {
 extern unsigned int BOOT_ARGUMENT_LOCATION;
 extern void boot_mode_select(void);
 extern BOOTMODE g_boot_mode;
+extern int advancedBootMode;
 extern CHIP_HW_VER  mt_get_chip_hw_ver(void);
 extern CHIP_SW_VER  mt_get_chip_sw_ver(void);
 extern int g_is_64bit_kernel;

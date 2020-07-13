@@ -55,6 +55,7 @@
 
 #include <platform/verified_boot.h> // for fill_atag_masp_data()
 #include <ctype.h>                  // for tolower()
+#include <platform/mt_gpt.h>
 
 extern int g_nr_bank;
 extern BOOT_ARGUMENT *g_boot_arg;
@@ -129,7 +130,7 @@ struct tag_emmcpartnum {
        char emmcpartnum[1];
 };
 #endif
-	
+
 /* boot information */
 #define ATAG_BOOT   0x41000802
 struct tag_boot {
@@ -441,7 +442,7 @@ unsigned *target_atag_emmcpartnum(unsigned *ptr, char *emmcpartnum)
        *ptr++ = ATAG_EMMCPARTNUM;
        p = (unsigned char *)ptr;
        strcpy((char *)p, emmcpartnum);
-       dprintf(CRITICAL, "emmc - partnumber    = %d\n", strlen(emmcpartnum));  
+       dprintf(CRITICAL, "emmc - partnumber    = %d\n", strlen(emmcpartnum));
        p += (strlen(emmcpartnum) + 1 + 4) >> 2;
 
        dprintf(CRITICAL, "emmc - partnumber    = %s\n", emmcpartnum);
@@ -672,7 +673,8 @@ int target_fdt_model(void *fdt)
 		"MT6771V/WM",
 		"MT6771V/CT",
 		"MT6771V/WT",
-		"MT8788"
+		"MT8788",
+		"MT8385"
 	};
 
 	switch (segment) {
@@ -706,6 +708,9 @@ int target_fdt_model(void *fdt)
 			break;
 		case 0x1c:
 			model_index = 8;
+			break;
+		case 0x44:
+			model_index = 10;
 			break;
 		default:
 			model_index = 3;
@@ -806,7 +811,7 @@ int target_fdt_firmware(void *fdt, char *serialno)
             value = "recovery";
             break;
 		case RECOVERY_BOOT2:
-			partition_get_name(38, value);
+			partition_get_name(PART_BOOT2_NUM, value);
 			break;
 		default:
 			value = "normal";

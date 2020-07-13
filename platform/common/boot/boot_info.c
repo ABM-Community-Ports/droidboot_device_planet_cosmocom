@@ -42,6 +42,7 @@
 #include <platform/boot_mode.h>
 #include <part_interface.h>
 #include <mkimg.h>
+#include <platform/mt_gpt.h>
 
 struct bootimg_hdr g_bootimg_hdr;
 struct boot_info g_boot_info;
@@ -73,19 +74,19 @@ char *get_bootimg_partition_name(uint32_t bootimg_type)
 	}
 
 	char *bootp;
-	
+
     if (g_boot_mode == RECOVERY_BOOT2) {
-		partition_get_name(38, &bootp);
+		partition_get_name(PART_BOOT2_NUM, &bootp);
 		result = bootp;
 	}
 
-	if (g_boot_mode == NORMAL_BOOT3) {
-		partition_get_name(41, &bootp);
+	if (advancedBootMode == NORMAL_BOOT3) {
+		partition_get_name(PART_BOOT3_NUM, &bootp);
 		result = bootp;
 	}
 
-	if (g_boot_mode == NORMAL_BOOT4) {
-		partition_get_name(42, &bootp);
+	if (advancedBootMode == NORMAL_BOOT4) {
+		partition_get_name(PART_BOOT4_NUM, &bootp);
 		result = bootp;
 	}
 
@@ -360,4 +361,3 @@ void set_bootimg_verify_skipped(void)
 	g_boot_info.vfy_skipped = 1;
 	return;
 }
-

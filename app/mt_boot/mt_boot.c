@@ -565,6 +565,50 @@ void memcpy_u8(unsigned char *dest, unsigned char *src, unsigned int size)
 extern bool decompress_kernel(unsigned char *in, void *out, int inlen,
 			      int outlen);
 
+
+#if defined(MTK_GOOGLE_TRUSTY_SUPPORT)
+int trusty_dts_append(void *fdt)
+{
+	int offset, ret = 0;
+	int nodeoffset = 0;
+	unsigned int trusty_reserved_mem[4] = {0};
+
+	offset = fdt_path_offset(fdt, "/reserved-memory");
+	nodeoffset = fdt_add_subnode(fdt, offset, "trusty-reserved-memory");
+	if (nodeoffset < 0) {
+		dprintf(CRITICAL,
+			"Warning: can't add trusty-reserved-memory node in device tree\n");
+		return 1;
+	}
+	ret = fdt_setprop_string(fdt, nodeoffset, "compatible",
+				 "mediatek,trusty-reserved-memory");
+	if (ret) {
+		dprintf(CRITICAL,
+			"Warning: can't add trusty compatible property in device tree\n");
+		return 1;
+	}
+	ret = fdt_setprop(fdt, nodeoffset, "no-map", NULL, 0);
+	if (ret) {
+		dprintf(CRITICAL, "Warning: can't add trusty no-map property in device tree\n");
+		return 1;
+	}
+	trusty_reserved_mem[0] = 0;
+	trusty_reserved_mem[1] = (u32)cpu_to_fdt32(g_boot_arg->tee_reserved_mem.start);
+	trusty_reserved_mem[2] = 0;
+	trusty_reserved_mem[3] = (u32)cpu_to_fdt32(g_boot_arg->tee_reserved_mem.size);
+	ret = fdt_setprop(fdt, nodeoffset, "reg", trusty_reserved_mem,
+			  sizeof(unsigned int) * 4);
+	if (ret) {
+		dprintf(CRITICAL, "Warning: can't add trusty reg property in device tree\n");
+		return 1;
+	}
+	dprintf(CRITICAL, "trusty-reserved-memory is appended (0x%llx, 0x%llx)\n",
+		g_boot_arg->tee_reserved_mem.start, g_boot_arg->tee_reserved_mem.size);
+
+	return ret;
+}
+#endif
+
 unsigned int get_reboot_reason(unsigned int boot_reason)
 {
 	unsigned int rc_wdt_status;
@@ -739,11 +783,11 @@ int boot_linux_fdt(void *kernel, unsigned *tags,
 
 #ifdef MTK_SECURITY_ANTI_ROLLBACK
 #ifdef MTK_OTP_FRAMEWORK_V2
-		if (g_boot_mode == NORMAL_BOOT || g_boot_mode == RECOVERY_BOOT || g_boot_mode == RECOVERY_BOOT2 || g_boot_mode == NORMAL_BOOT3 || g_boot_mode == NORMAL_BOOT4) {
+		if (g_boot_mode == NORMAL_BOOT || g_boot_mode == RECOVERY_BOOT || g_boot_mode == RECOVERY_BOOT2) {
 			ret = sec_otp_ver_update(g_boot_mode);
 		}
 #else
-		if (g_boot_mode == NORMAL_BOOT || g_boot_mode == NORMAL_BOOT3 || g_boot_mode == NORMAL_BOOT4) {
+		if (g_boot_mode == NORMAL_BOOT) {
 			ret = sec_otp_ver_update(g_boot_mode);
 			imgver_not_sync_warning(g_boot_arg->pl_imgver_status, ret);
 		}
@@ -875,6 +919,14 @@ int boot_linux_fdt(void *kernel, unsigned *tags,
 	}
 #ifdef MBLOCK_LIB_SUPPORT
 	ret = fdt_memory_append(fdt);
+	if (ret) {
+		assert(0);
+		return FALSE;
+	}
+#endif
+
+#if defined(MTK_GOOGLE_TRUSTY_SUPPORT)
+	ret = trusty_dts_append(fdt);
 	if (ret) {
 		assert(0);
 		return FALSE;
@@ -1488,8 +1540,6 @@ int boot_linux_from_storage(void)
 	char cmdline_tmpbuf[CMDLINE_TMP_CONCAT_SIZE];
 	switch (g_boot_mode) {
 	case NORMAL_BOOT:
-	case NORMAL_BOOT3:
-	case NORMAL_BOOT4:
 	case META_BOOT:
 	case ADVMETA_BOOT:
 	case SW_REBOOT:
@@ -1599,7 +1649,7 @@ int boot_linux_from_storage(void)
 	* we bypass write protection since we needs to write to proinfo. Whether device is in ATM
 	* should also be passed to kernel through cmdline, only seen in normal mode
 	*/
-	if (g_boot_mode == NORMAL_BOOT || g_boot_mode == NORMAL_BOOT3 || g_boot_mode == NORMAL_BOOT4) {
+	if (g_boot_mode == NORMAL_BOOT) {
 		if (true == get_atm_enable_status()) {
 			cmdline_append("androidboot.atm=enable");
 		} else if (false == get_atm_enable_status()) {

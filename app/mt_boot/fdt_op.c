@@ -160,7 +160,7 @@ bool dtb_overlay(void *fdt, int size, uint64_t recovery_dtbo_offset)
 	}
 	else {
 		if (g_boot_mode == RECOVERY_BOOT2)
-			partition_get_name(38, &part_name);
+			partition_get_name(PART_BOOT2_NUM, &part_name);
 		else
 		    part_name = "recovery";
 		g_dtbo_load_src = DTBO_FROM_RECOVERY;
@@ -292,8 +292,8 @@ int bldr_load_dtb(char *boot_load_partition)
 	char part_name[16];
 	uint64_t recovery_dtbo_offset = 0;
 	char *bootp;
-	
-	partition_get_name(38, &bootp);
+
+	partition_get_name(PART_BOOT2_NUM, &bootp);
 
 	pal_log_err("ZBOOT FDT bldr_load_dtb from %s\n", boot_load_partition);
 
@@ -465,13 +465,13 @@ void load_device_tree(void)
 		part_name = "boot";
 #endif
 	if (g_boot_mode == RECOVERY_BOOT2)
-		partition_get_name(38, &part_name);
+		partition_get_name(PART_BOOT2_NUM, &part_name);
 
-	if (g_boot_mode == NORMAL_BOOT3)
-		partition_get_name(41, &part_name);
+	if (advancedBootMode == NORMAL_BOOT3)
+		partition_get_name(PART_BOOT3_NUM, &part_name);
 
-	if (g_boot_mode == NORMAL_BOOT4)
-		partition_get_name(42, &part_name);
+	if (advancedBootMode == NORMAL_BOOT4)
+		partition_get_name(PART_BOOT4_NUM, &part_name);
 
 #if defined(CFG_DTB_EARLY_LOADER_SUPPORT)
 	if (bldr_load_dtb(part_name) < 0)
@@ -480,4 +480,3 @@ void load_device_tree(void)
 
 	PROFILING_END();
 }
-

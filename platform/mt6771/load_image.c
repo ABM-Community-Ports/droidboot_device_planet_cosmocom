@@ -82,6 +82,7 @@ uint32_t g_fcimg_sz = 0;
 int g_kimg_sz = 0;
 int g_rimg_sz = 0;
 extern BOOT_ARGUMENT *g_boot_arg;
+extern int advancedBootMode;
 extern struct bootimg_hdr *g_boot_hdr;
 extern bool cmdline_append(const char *append_string);
 extern void mtk_wdt_restart(void);
@@ -580,7 +581,7 @@ static int mboot_android_check_bootimg_hdr(char *part_name,
 		pal_log_info(" > boot image size = 0x%x\n", g_bimg_sz);
 	}
 
-	if (g_boot_mode == NORMAL_BOOT3 || g_boot_mode == NORMAL_BOOT4) {
+	if (advancedBootMode == NORMAL_BOOT3 || advancedBootMode == NORMAL_BOOT4) {
 		g_boot_state = BOOT_STATE_GREEN;
  	    	ret = set_boot_state_to_cmdline();
 	}
@@ -857,7 +858,7 @@ int mboot_android_load_bootimg(char *part_name, uint32_t addr)
 		return len;
 	}
 
-	if (g_boot_mode == NORMAL_BOOT3 || g_boot_mode == NORMAL_BOOT4) {
+	if (advancedBootMode == NORMAL_BOOT3 || advancedBootMode == NORMAL_BOOT4) {
 		g_boot_state = BOOT_STATE_GREEN;
  		ret = set_boot_state_to_cmdline();
 	}
@@ -935,7 +936,7 @@ int mboot_android_load_recoveryimg(char *part_name, uint32_t addr)
 	// check ramdisk/rootfs header
 	if (g_boot_mode == RECOVERY_BOOT2) {
 		char *bootp;
-		partition_get_name(38, &bootp);
+		partition_get_name(PART_BOOT2_NUM, &bootp);
         g_rimg_sz = mboot_android_check_img_info(bootp, (part_hdr_t *)g_rmem_off);
 	}
 	else

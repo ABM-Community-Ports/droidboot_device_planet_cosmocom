@@ -114,6 +114,10 @@ static inline int mt6370_chg_probe(void)
 #define MT6370_PMU_REG_QCSTAT		(0xD6)
 #define MT6370_PMU_REG_DICHGSTAT	(0xD7)
 #define MT6370_PMU_REG_OVPCTRLSTAT	(0xD8)
+/* test mode related register */
+#define MT6370_PMU_REG_TM_INF		(0xF4)
+#define MT6370_TM_REG_ICC_1A		(0x19)
+#define MT6370_TM_REG_TM_INF		(0x41)
 
 /* Parameter */
 /* mA */
