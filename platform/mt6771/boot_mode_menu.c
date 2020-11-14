@@ -5,6 +5,7 @@
 #include <debug.h>
 #include <err.h>
 #include <reg.h>
+#include <env.h>
 #include <video.h>
 #include <platform/mt_typedefs.h>
 #include <platform/boot_mode.h>
@@ -25,6 +26,7 @@ extern void mtk_wdt_disable(void);
 extern void cmdline_append(const char* append_string);
 extern bool boot_ftrace;
 bool g_boot_menu = false;
+#define LAST_BOOT_SELECT "last_boot_select"
 
 #define AW9523_I2C_ID  I2C4
 #define AW9523_SLAVE_ADDR_WRITE   0xb6
@@ -164,6 +166,13 @@ void boot_mode_menu_select()
 	char *boot3;
 	char *boot4;
 
+	char lbs_buf[2];
+
+	int last_boot_select = (get_env(LAST_BOOT_SELECT) == NULL) ? 0 : atoi(get_env(LAST_BOOT_SELECT));
+	if (last_boot_select >= 0 && last_boot_select < 6) {
+		select = last_boot_select;
+	}
+
 	aw9523_hw_reset();
 	aw9523_init_keycfg();
 
@@ -295,10 +304,13 @@ void boot_mode_menu_select()
 			refreshOptions = 1;
 
 		if (timeout < 0 && !autoBootInterrupted) {
-			select = 0;
 			boot_selected = 1;
 		}
 	}
+
+	sprintf(lbs_buf, "%d", select);
+	set_env(LAST_BOOT_SELECT, lbs_buf);
+
 	if (select == 0) {
 		g_boot_mode = NORMAL_BOOT;
 	} else if (select == 1) {
