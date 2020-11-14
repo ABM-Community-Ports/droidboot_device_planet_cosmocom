@@ -152,6 +152,16 @@ void aw9523_init_keycfg(void)
 	aw9523_read_byte(P0_INPUT, &val); // clear P0 Input Interrupt
 }
 
+void hall_init() {
+	mt_set_gpio_mode(GPIO8 | 0x80000000, GPIO_MODE_00);
+	mt_set_gpio_dir(GPIO8 | 0x80000000, GPIO_DIR_IN);
+	mt_set_gpio_pull_enable(GPIO8 | 0x80000000, GPIO_PULL_DISABLE);
+}
+
+bool hall_state_open() {
+	return mt_get_gpio_in(GPIO8 | 0x80000000);
+}
+
 void boot_mode_menu_select()
 {
 	int select = 0;  // 0=recovery mode, 1=fastboot.  2=normal boot 3=normal boot + ftrace.4=kmemleak on
@@ -175,6 +185,7 @@ void boot_mode_menu_select()
 
 	aw9523_hw_reset();
 	aw9523_init_keycfg();
+	hall_init();
 
 	partition_get_name(PART_BOOT2_NUM, &boot2);
 	partition_get_name(PART_BOOT3_NUM, &boot3);
@@ -189,17 +200,19 @@ void boot_mode_menu_select()
 	int vol_down_pressed = 0;
 	while (boot_selected == 0) {
 
-		for (int i=0; i<P1_NUM_MAX; i++) {
-			if (P1_KCOL_MASK & (1<<i)) {
-				kal_uint8 val = 0;
-				aw9523_read_byte(P1_CONFIG, &val);
-				aw9523_write_byte(P1_CONFIG, (P1_KCOL_MASK | val) & (~(1<<i))); //set p1_x port output mode
-				aw9523_read_byte(P1_OUTPUT, &val);
-				aw9523_write_byte(P1_OUTPUT, (P1_KCOL_MASK | val) & (~(1<<i)));
+		if (hall_state_open()) {
+			for (int i = 0; i < P1_NUM_MAX; i++) {
+				if (P1_KCOL_MASK & (1 << i)) {
+					kal_uint8 val = 0;
+					aw9523_read_byte(P1_CONFIG, &val);
+					aw9523_write_byte(P1_CONFIG, (P1_KCOL_MASK | val) & (~(1 << i))); //set p1_x port output mode
+					aw9523_read_byte(P1_OUTPUT, &val);
+					aw9523_write_byte(P1_OUTPUT, (P1_KCOL_MASK | val) & (~(1 << i)));
 
-				aw9523_read_byte(P0_INPUT, &val); // read p0 port status
+					aw9523_read_byte(P0_INPUT, &val); // read p0 port status
 
-				keyst[i] = (val & P0_KROW_MASK);
+					keyst[i] = (val & P0_KROW_MASK);
+				}
 			}
 		}
 
