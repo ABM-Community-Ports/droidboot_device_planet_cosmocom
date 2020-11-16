@@ -137,7 +137,7 @@ void aw9523_hw_reset(void) {
 	mdelay(1);
 }
 
-void aw9523_init_keycfg(void)
+void aw9523_init_keycfg(unsigned char *keyst)
 {
 	aw9523_write_byte(SW_RSTN, 0x00); // Software Reset
 
@@ -150,6 +150,8 @@ void aw9523_init_keycfg(void)
 
 	kal_uint8 val = 0;
 	aw9523_read_byte(P0_INPUT, &val); // clear P0 Input Interrupt
+
+	memset(keyst, P0_KROW_MASK, P1_NUM_MAX); // set all keys not pressed
 }
 
 void hall_init() {
@@ -184,7 +186,7 @@ void boot_mode_menu_select()
 	}
 
 	aw9523_hw_reset();
-	aw9523_init_keycfg();
+	aw9523_init_keycfg(keyst);
 	hall_init();
 
 	partition_get_name(PART_BOOT2_NUM, &boot2);
