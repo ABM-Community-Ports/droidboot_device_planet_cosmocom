@@ -324,7 +324,9 @@ void boot_mode_menu_select()
 	}
 
 	sprintf(lbs_buf, "%d", select);
-	set_env(LAST_BOOT_SELECT, lbs_buf);
+	if (select != 1 && select != 2) {
+		set_env(LAST_BOOT_SELECT, lbs_buf);
+	}
 
 	if (select == 0) {
 		g_boot_mode = NORMAL_BOOT;
