@@ -52,6 +52,8 @@ struct rtc_time {
 	U16 tm_year;
 };
 
+extern unsigned long rtc_mk_time(struct rtc_time *tm);
+
 extern void rtc_writeif_unlock(void);
 extern void rtc_writeif_lock(void);
 

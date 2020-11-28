@@ -8,6 +8,7 @@
 #include <reg.h>
 #include <env.h>
 #include <video.h>
+#include <mt_rtc.h>
 #include <platform/mt_typedefs.h>
 #include <platform/boot_mode.h>
 #include <platform/mt_reg_base.h>
@@ -24,9 +25,9 @@ extern BOOL recovery_check_command_trigger(void);
 extern void boot_mode_menu_select();
 extern void mtk_wdt_disable(void);
 #define MODULE_NAME "[BOOT_MENU]"
-extern void cmdline_append(const char* append_string);
 extern bool boot_ftrace;
 bool g_boot_menu = false;
+#define LAST_BOOT_TIME "last_boot_time"
 #define LAST_BOOT_SELECT "last_boot_select"
 
 #define AW9523_I2C_ID  I2C4
@@ -200,9 +201,18 @@ void boot_mode_menu_select()
 	char *boot4;
 
 	char lbs_buf[2];
+	char lbt_buf[20];
 
-	int last_boot_select = (get_env(LAST_BOOT_SELECT) == NULL) ? 0 : atoi(get_env(LAST_BOOT_SELECT));
-	if (last_boot_select >= 0 && last_boot_select < 6) {
+	struct rtc_time tm;
+	unsigned long this_boot_time;
+	unsigned long last_boot_time;
+
+	rtc_get_time(&tm);
+	this_boot_time = rtc_mk_time(&tm);
+
+	last_boot_time = (get_env(LAST_BOOT_TIME) == NULL) ? 0 : strtoul(get_env(LAST_BOOT_TIME),NULL,0);
+	last_boot_select = (get_env(LAST_BOOT_SELECT) == NULL) ? 0 : atoi(get_env(LAST_BOOT_SELECT));
+	if (last_boot_select >= 0 && last_boot_select < 6 && this_boot_time > last_boot_time + 50) {
 		select = last_boot_select;
 	}
 
@@ -345,6 +355,8 @@ void boot_mode_menu_select()
 	if (select != 1 && select != 2) {
 		set_env(LAST_BOOT_SELECT, lbs_buf);
 	}
+	sprintf(lbt_buf, "%lu", this_boot_time);
+	set_env(LAST_BOOT_TIME, lbt_buf);
 
 	if (select == 0) {
 		g_boot_mode = NORMAL_BOOT;

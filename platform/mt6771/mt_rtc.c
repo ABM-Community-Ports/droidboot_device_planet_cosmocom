@@ -82,6 +82,10 @@ static unsigned long rtc_mktime(int yea, int mth, int dom, int hou, int min, int
 	return ((d3 * 24 + hou) * 60 + min) * 60 + sec;
 }
 
+unsigned long rtc_mk_time(struct rtc_time *tm) {
+	return rtc_mktime(tm->tm_year, tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+}
+
 static void rtc_write_trigger(void)
 {
 	RTC_Write(RTC_WRTGR, 1);
