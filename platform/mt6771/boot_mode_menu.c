@@ -2,6 +2,7 @@
 /*This file implements MTK boot mode.*/
 
 #include <sys/types.h>
+#include <string.h>
 #include <debug.h>
 #include <err.h>
 #include <reg.h>
@@ -164,9 +165,29 @@ bool hall_state_open() {
 	return mt_get_gpio_in(GPIO8 | 0x80000000);
 }
 
+static bool skip_boot_option(char* boot) {
+	return (strncmp("EMPTY",boot,strlen("EMPTY")) == 0);
+}
+
+static int print_boot_option(int index, int count, char* boot, int select)
+{
+	if (!skip_boot_option(boot)) {
+		video_printf("[%d] %s boot", count, boot);
+		if (select == index)
+			video_printf(" <-----                        \n");
+		else
+			video_printf("                               \n");
+		count++;
+	}
+	return count;
+}
+
 void boot_mode_menu_select()
 {
-	int select = 0;  // 0=recovery mode, 1=fastboot.  2=normal boot 3=normal boot + ftrace.4=kmemleak on
+	int select = 0;
+	int last_boot_select = 0;
+	int kbd_select = 0;
+	int count = 1;
 	int refreshOptions = 1;
 	const char *title_msg = "Select Boot Mode\nPress VOL+/VOL- to move up/down\nPress ESC to select\n\n";
 	int timeout = 8000;
@@ -221,6 +242,10 @@ void boot_mode_menu_select()
 		if (mtk_detect_key(MT65XX_MENU_SELECT_KEY) || aw9523_key_pressed(keyst, KROW_P0_5, KROW_P1_4)) {
 			if (vol_down_pressed == 0) {
 				select--;
+				if ((select == 2) && skip_boot_option(boot2) ||
+					(select == 3) && skip_boot_option(boot3) ||
+					(select == 4) && skip_boot_option(boot4))
+					select--;
 				if (select < 0)
 					select = 5;
 				refreshOptions = 1;
@@ -233,6 +258,10 @@ void boot_mode_menu_select()
 		if (!mt_get_gpio_in(GPIO11 | 0x80000000) || aw9523_key_pressed(keyst, KROW_P0_5, KROW_P1_2)) {
 			if (vol_up_pressed == 0) {
 				select++;
+				if ((select == 2) && skip_boot_option(boot2) ||
+					(select == 3) && skip_boot_option(boot3) ||
+					(select == 4) && skip_boot_option(boot4))
+					select++;
 				if (select == 6)
 					select = 0;
 				refreshOptions = 1;
@@ -246,71 +275,60 @@ void boot_mode_menu_select()
 		if (mtk_detect_key(8) || aw9523_key_pressed(keyst, KROW_P0_6, KROW_P1_5))
 			boot_selected = 1;
 
+		kbd_select = -1;
 		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_0)) {
-			select = 0;
+			kbd_select = 0;
 			boot_selected = 1;
 		}
 		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_1)) {
-			select = 1;
+			kbd_select = 1;
 			boot_selected = 1;
 		}
 		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_2)) {
-			select = 2;
+			kbd_select = 2;
 			boot_selected = 1;
 		}
 		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_3)) {
-			select = 3;
+			kbd_select = 3;
 			boot_selected = 1;
 		}
 		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_4)) {
-			select = 4;
+			kbd_select = 4;
 			boot_selected = 1;
 		}
 		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_5)) {
-			select = 5;
+			kbd_select = 5;
 			boot_selected = 1;
 		}
 
-		if (refreshOptions) {
+		if (kbd_select >= 0)
+		{
+			select = kbd_select;
+			if (kbd_select >= 2 && skip_boot_option(boot2))
+				select++;
+			if (kbd_select >= 3 && skip_boot_option(boot3))
+				select++;
+			if (kbd_select >= 4 && skip_boot_option(boot4))
+				select++;
+		}
+
+		if (refreshOptions && !boot_selected) {
 			refreshOptions = 0;
 			g_boot_menu = true;
 			video_set_cursor(video_get_rows() / 2 - 30, 0);
 			video_printf(title_msg);
 
-			video_printf("[1] NORMAL boot");
-			if (select == 0)
-				video_printf(" <-----                        \n");
-			else
-				video_printf("                               \n");
-			video_printf("[2] RECOVERY boot");
-			if (select == 1)
-				video_printf(" <-----                        \n");
-			else
-				video_printf("                               \n");
-			video_printf("[3] %s boot", boot2);
-			if (select == 2)
-				video_printf(" <-----                        \n");
-			else
-				video_printf("                               \n");
-			video_printf("[4] %s boot", boot3);
-			if (select == 3)
-				video_printf(" <-----                        \n");
-			else
-				video_printf("                               \n");
-			video_printf("[5] %s boot", boot4);
-			if (select == 4)
-				video_printf(" <-----                        \n");
-			else
-				video_printf("                               \n");
-			video_printf("[6] FASTBOOT boot");
-			if (select == 5)
-				video_printf(" <-----                        \n");
-			else
-				video_printf("                               \n");
+			count = 1;
+			count = print_boot_option(0, count, "NORMAL", select);
+			count = print_boot_option(1, count, "RECOVERY", select);
+			count = print_boot_option(2, count, boot2, select);
+			count = print_boot_option(3, count, boot3, select);
+			count = print_boot_option(4, count, boot4, select);
+			count = print_boot_option(5, count, "FASTBOOT", select);
 			if (!autoBootInterrupted)
 				video_printf("Automatic boot in %d seconds...\n", (timeout / 1000));
 			else
-				video_printf("                                    \n");
+				video_printf("                               \n");
 		}
 
 		mdelay(50);
