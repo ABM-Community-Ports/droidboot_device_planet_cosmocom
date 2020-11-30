@@ -252,9 +252,11 @@ void boot_mode_menu_select()
 		if (mtk_detect_key(MT65XX_MENU_SELECT_KEY) || aw9523_key_pressed(keyst, KROW_P0_5, KROW_P1_4)) {
 			if (vol_down_pressed == 0) {
 				select--;
-				if ((select == 2) && skip_boot_option(boot2) ||
-					(select == 3) && skip_boot_option(boot3) ||
-					(select == 4) && skip_boot_option(boot4))
+				if ((select == 4) && skip_boot_option(boot4))
+					select--;
+				if ((select == 3) && skip_boot_option(boot3))
+					select--;
+				if ((select == 2) && skip_boot_option(boot2))
 					select--;
 				if (select < 0)
 					select = 5;
@@ -268,9 +270,11 @@ void boot_mode_menu_select()
 		if (!mt_get_gpio_in(GPIO11 | 0x80000000) || aw9523_key_pressed(keyst, KROW_P0_5, KROW_P1_2)) {
 			if (vol_up_pressed == 0) {
 				select++;
-				if ((select == 2) && skip_boot_option(boot2) ||
-					(select == 3) && skip_boot_option(boot3) ||
-					(select == 4) && skip_boot_option(boot4))
+				if ((select == 2) && skip_boot_option(boot2))
+					select++;
+				if ((select == 3) && skip_boot_option(boot3))
+					select++;
+				if ((select == 4) && skip_boot_option(boot4))
 					select++;
 				if (select == 6)
 					select = 0;
