@@ -346,7 +346,6 @@ void boot_mode_menu_select()
 				video_printf("Automatic boot in %d seconds...\n", (timeout / 1000));
 			else
 				video_printf("                               \n");
-			video_printf("lbt: %ul tbt: %ul =(%ul)\n", last_boot_time, this_boot_time, this_boot_time - last_boot_time);
 		}
 
 		mdelay(50);
