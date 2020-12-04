@@ -147,13 +147,16 @@ void aw9523_init_keycfg(unsigned char *keyst)
 	aw9523_write_byte(P1_CONFIG, 0x00); // P1: Output Mode
 	aw9523_write_byte(P1_OUTPUT, 0x00); // P1: 0000 0000
 
-	aw9523_write_byte(P0_INT, 0x00); // P0: Enable Interrupt
+	aw9523_write_byte(P0_INT, 0xFF); // P0: Disable Interrupt
 	aw9523_write_byte(P1_INT, 0xFF); // P1: Disable Interrupt
 
-	kal_uint8 val = 0;
-	aw9523_read_byte(P0_INPUT, &val); // clear P0 Input Interrupt
-
 	memset(keyst, P0_KROW_MASK, P1_NUM_MAX); // set all keys not pressed
+}
+
+void aw9523_hw_off(void)
+{
+	aw9523_write_byte(SW_RSTN, 0x00); // Software Reset
+	mt_set_gpio_out(GPIO175 | 0x80000000, GPIO_OUT_ZERO);
 }
 
 void hall_init() {
@@ -343,6 +346,7 @@ void boot_mode_menu_select()
 				video_printf("Automatic boot in %d seconds...\n", (timeout / 1000));
 			else
 				video_printf("                               \n");
+			video_printf("lbt: %ul tbt: %ul =(%ul)\n", last_boot_time, this_boot_time, this_boot_time - last_boot_time);
 		}
 
 		mdelay(50);
@@ -355,8 +359,10 @@ void boot_mode_menu_select()
 		}
 	}
 
+	aw9523_hw_off();
+
 	sprintf(lbs_buf, "%d", select);
-	if (select != 1 && select != 2) {
+	if (select != 1 && select != 2 && select != last_boot_select) {
 		set_env(LAST_BOOT_SELECT, lbs_buf);
 	}
 	sprintf(lbt_buf, "%lu", this_boot_time);
