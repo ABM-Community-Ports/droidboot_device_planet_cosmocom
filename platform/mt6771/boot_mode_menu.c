@@ -8,7 +8,6 @@
 #include <reg.h>
 #include <env.h>
 #include <video.h>
-#include <mt_rtc.h>
 #include <platform/mt_typedefs.h>
 #include <platform/boot_mode.h>
 #include <platform/mt_reg_base.h>
@@ -27,7 +26,6 @@ extern void mtk_wdt_disable(void);
 #define MODULE_NAME "[BOOT_MENU]"
 extern bool boot_ftrace;
 bool g_boot_menu = false;
-#define LAST_BOOT_TIME "last_boot_time"
 #define LAST_BOOT_SELECT "last_boot_select"
 
 #define AW9523_I2C_ID  I2C4
@@ -77,6 +75,8 @@ bool g_boot_menu = false;
 //KEY_4,     KROW_P0_0, KROW_P1_3
 //KEY_5,     KROW_P0_0, KROW_P1_4
 //KEY_6,     KROW_P0_0, KROW_P1_5
+//KEY_LEFT,  KROW_P0_5, KROW_P1_1
+//KEY_RIGHT, KROW_P0_5, KROW_P1_5
 
 kal_uint32 aw9523_write_byte(kal_uint8 addr, kal_uint8 reg_data)
 {
@@ -173,10 +173,12 @@ static bool skip_boot_option(char* boot) {
 	return (strncmp("EMPTY",boot,strlen("EMPTY")) == 0);
 }
 
-static int print_boot_option(int index, int count, char* boot, int select)
+static int print_boot_option(int index, int count, char* boot, int select, int last_boot_select)
 {
 	if (!skip_boot_option(boot)) {
 		video_printf("[%d] %s boot", count, boot);
+		if (last_boot_select == index)
+			video_printf(" *");
 		if (select == index)
 			video_printf(" <-----                        \n");
 		else
@@ -193,10 +195,11 @@ void boot_mode_menu_select()
 	int kbd_select = 0;
 	int count = 1;
 	int refreshOptions = 1;
-	const char *title_msg = "Select Boot Mode\nPress VOL+/VOL- to move up/down\nPress ESC to select\n\n";
+	const char *title_msg = "Select Boot Mode\nUse arrow keys or numbers\nPress Enter to select\n\n";
 	int timeout = 8000;
 	int autoBootInterrupted = 0;
 	int boot_selected = 0;
+	bool update_boot_selection_default = false;
 	static unsigned char keyst[P1_NUM_MAX];
 
 	char *boot2;
@@ -204,18 +207,9 @@ void boot_mode_menu_select()
 	char *boot4;
 
 	char lbs_buf[2];
-	char lbt_buf[20];
 
-	struct rtc_time tm;
-	unsigned long this_boot_time;
-	unsigned long last_boot_time;
-
-	rtc_get_time(&tm);
-	this_boot_time = rtc_mk_time(&tm);
-
-	last_boot_time = (get_env(LAST_BOOT_TIME) == NULL) ? 0 : strtoul(get_env(LAST_BOOT_TIME),NULL,0);
 	last_boot_select = (get_env(LAST_BOOT_SELECT) == NULL) ? 0 : atoi(get_env(LAST_BOOT_SELECT));
-	if (last_boot_select >= 0 && last_boot_select < 6 && this_boot_time > last_boot_time + 50) {
+	if (last_boot_select >= 0 && last_boot_select < 6) {
 		select = last_boot_select;
 	}
 
@@ -317,6 +311,14 @@ void boot_mode_menu_select()
 			kbd_select = 5;
 			boot_selected = 1;
 		}
+		if (aw9523_key_pressed(keyst, KROW_P0_5, KROW_P1_1)) {
+			refreshOptions = 1;
+			update_boot_selection_default = false;
+		}
+		if (aw9523_key_pressed(keyst, KROW_P0_5, KROW_P1_5)) {
+			refreshOptions = 1;
+			update_boot_selection_default = true;
+		}
 
 		if (kbd_select >= 0)
 		{
@@ -336,16 +338,21 @@ void boot_mode_menu_select()
 			video_printf(title_msg);
 
 			count = 1;
-			count = print_boot_option(0, count, "NORMAL", select);
-			count = print_boot_option(1, count, "RECOVERY", select);
-			count = print_boot_option(2, count, boot2, select);
-			count = print_boot_option(3, count, boot3, select);
-			count = print_boot_option(4, count, boot4, select);
-			count = print_boot_option(5, count, "FASTBOOT", select);
+			count = print_boot_option(0, count, "NORMAL", select, last_boot_select);
+			count = print_boot_option(1, count, "RECOVERY", select, last_boot_select);
+			count = print_boot_option(2, count, boot2, select, last_boot_select);
+			count = print_boot_option(3, count, boot3, select, last_boot_select);
+			count = print_boot_option(4, count, boot4, select, last_boot_select);
+			print_boot_option(5, count, "FASTBOOT", select, last_boot_select);
+
 			if (!autoBootInterrupted)
-				video_printf("Automatic boot in %d seconds...\n", (timeout / 1000));
-			else
-				video_printf("                               \n");
+				video_printf("\nAutomatic boot in %d seconds...\n", (timeout / 1000));
+			else {
+				if (!update_boot_selection_default)
+					video_printf("\n* Default  < [Retain] |  Set  >\n");
+				else
+					video_printf("\n* Default  <  Retain  | [Set] >\n");
+			}
 		}
 
 		mdelay(50);
@@ -360,12 +367,12 @@ void boot_mode_menu_select()
 
 	aw9523_hw_off();
 
-	sprintf(lbs_buf, "%d", select);
-	if (select != 1 && select != 2 && select != last_boot_select) {
+	if (update_boot_selection_default
+		&& select != last_boot_select
+		&& (select == 0 || select == 3 || select == 4)) {
+		sprintf(lbs_buf, "%d", select);
 		set_env(LAST_BOOT_SELECT, lbs_buf);
 	}
-	sprintf(lbt_buf, "%lu", this_boot_time);
-	set_env(LAST_BOOT_TIME, lbt_buf);
 
 	if (select == 0) {
 		g_boot_mode = NORMAL_BOOT;
