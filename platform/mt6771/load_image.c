@@ -588,9 +588,6 @@ static int mboot_android_check_bootimg_hdr(char *part_name,
 	else
 		ret = verified_boot_init("boot", "boot");
 
-	snprintf(cmd_boot_name, TMPBUF_SIZE, "androidboot.bootpartition=%s", part_name);
-	cmdline_append(cmd_boot_name);
-
 	if (ret)
 		return ret;
 
@@ -709,9 +706,6 @@ static int mboot_android_check_recoveryimg_hdr(char *part_name,
 
 	if (ret)
 		return ret;
-
-	snprintf(cmd_boot_name, TMPBUF_SIZE, "androidboot.bootpartition=%s", part_name);
- 	cmdline_append(cmd_boot_name);
 
 	return 0;
 }
