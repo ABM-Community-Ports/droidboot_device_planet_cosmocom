@@ -393,6 +393,8 @@ void boot_mode_menu_select()
 	}
 	video_clean_screen();
 	video_set_cursor(video_get_rows() / 2, 0);
+
+	mtk_wdt_restart();
 	return;
 }
 
