@@ -51,7 +51,7 @@
 #if defined(MTK_EMMC_SUPPORT)
 #include "mmc_core.h"
 #endif
-
+#include <part_lvm.h>
 
 typedef struct {
 	char official_name[12];
@@ -359,6 +359,8 @@ unsigned int write_partition(unsigned size, unsigned char *partition)
 	return 0;
 }
 
+u64 get_entry_count();
+
 int part_init(part_dev_t *dev)
 {
 	part_t *part_ptr;
@@ -550,10 +552,18 @@ char* partition_get_real_name(const char *part_name)
 
 int partition_exists(const char *part_name)
 {
-	if (partition_get_index_by_name(part_name) == -1)
-		return PART_NOT_EXIST;
-	else
-		return PART_OK;
+	if (memcmp(part_name, lvm_lv_prefix, strlen(lvm_lv_prefix)) == 0) {
+		if (lv_exists_with_lv_name(part_name)) {
+			return PART_OK;
+		} else {
+			return PART_NOT_EXIST;
+		}
+	} else {
+		if (partition_get_index_by_name(part_name) == -1)
+			return PART_NOT_EXIST;
+		else
+			return PART_OK;
+	}
 }
 
 int partition_get_region_by_name(const char *part_name)

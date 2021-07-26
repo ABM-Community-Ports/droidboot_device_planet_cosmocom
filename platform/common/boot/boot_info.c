@@ -43,6 +43,7 @@
 #include <part_interface.h>
 #include <mkimg.h>
 #include <platform/mt_gpt.h>
+#include <part_lvm.h>
 
 struct bootimg_hdr g_bootimg_hdr;
 struct boot_info g_boot_info;
@@ -90,11 +91,20 @@ char *get_bootimg_partition_name(uint32_t bootimg_type)
 		result = bootp;
 	}
 
+	if (advancedBootMode >= NORMAL_BOOT_LVM_BASE && advancedBootMode < NORMAL_BOOT_LVM_MAX) {
+		result = lvm_boot_name_for_index(advancedBootMode-NORMAL_BOOT_LVM_BASE);
+	}
+
 	return result;
 }
 
 uint32_t bootimg_hdr_valid(uint8_t *buf)
 {
+	uint8_t debug_copy[BOOTIMG_MAGIC_SZ];
+	memcpy(debug_copy, buf, BOOTIMG_MAGIC_SZ);
+	debug_copy[BOOTIMG_MAGIC_SZ-1]=0;
+	pal_log_info("bootimg_hdr_valid %s\n", debug_copy);
+
 	if (strncmp((char *)buf, BOOTIMG_MAGIC, BOOTIMG_MAGIC_SZ) == 0)
 		return 1;
 	else

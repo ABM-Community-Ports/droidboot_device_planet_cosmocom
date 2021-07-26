@@ -2,6 +2,7 @@
 /*This file implements MTK boot mode.*/
 
 #include <sys/types.h>
+#include <stdlib.h>
 #include <string.h>
 #include <debug.h>
 #include <err.h>
@@ -18,6 +19,7 @@
 #include <platform/mt_gpio.h>
 #include <platform/mt_i2c.h>
 #include <part_interface.h>
+#include <part_lvm.h>
 
 extern  int unshield_recovery_detection(void);
 extern BOOL recovery_check_command_trigger(void);
@@ -199,6 +201,7 @@ void boot_mode_menu_select()
 	int timeout = 8000;
 	int autoBootInterrupted = 0;
 	int boot_selected = 0;
+	int lvm_boot_lvs_count = 0;
 	bool update_boot_selection_default = false;
 	static unsigned char keyst[P1_NUM_MAX];
 
@@ -208,8 +211,12 @@ void boot_mode_menu_select()
 
 	char lbs_buf[2];
 
+	if (lvm_detect() == NO_ERROR) {
+		lvm_boot_lvs_count = count_of_lvm_bootable_lvs();
+	}
+
 	last_boot_select = (get_env(LAST_BOOT_SELECT) == NULL) ? 0 : atoi(get_env(LAST_BOOT_SELECT));
-	if (last_boot_select >= 0 && last_boot_select < 6) {
+	if (last_boot_select >= 0 && last_boot_select < (6+lvm_boot_lvs_count)) {
 		select = last_boot_select;
 	}
 
@@ -256,7 +263,7 @@ void boot_mode_menu_select()
 				if ((select == 2) && skip_boot_option(boot2))
 					select--;
 				if (select < 0)
-					select = 5;
+					select = 5+lvm_boot_lvs_count;
 				refreshOptions = 1;
 				autoBootInterrupted = 1;
 				vol_down_pressed = 1;
@@ -273,7 +280,7 @@ void boot_mode_menu_select()
 					select++;
 				if ((select == 4) && skip_boot_option(boot4))
 					select++;
-				if (select == 6)
+				if (select == 6+lvm_boot_lvs_count)
 					select = 0;
 				refreshOptions = 1;
 				autoBootInterrupted = 1;
@@ -287,19 +294,19 @@ void boot_mode_menu_select()
 			boot_selected = 1;
 
 		kbd_select = -1;
-		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_0)) {
+		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_0)) { //1
 			kbd_select = 0;
 			boot_selected = 1;
 		}
-		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_1)) {
+		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_1)) { //2
 			kbd_select = 1;
 			boot_selected = 1;
 		}
-		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_2)) {
+		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_2)) { //3
 			kbd_select = 2;
 			boot_selected = 1;
 		}
-		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_3)) {
+		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_3)) { //4
 			kbd_select = 3;
 			boot_selected = 1;
 		}
@@ -309,6 +316,18 @@ void boot_mode_menu_select()
 		}
 		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_5)) {
 			kbd_select = 5;
+			boot_selected = 1;
+		}
+		if (aw9523_key_pressed(keyst, KROW_P0_0, KROW_P1_6)) {
+			kbd_select = 6;
+			boot_selected = 1;
+		}
+		if (aw9523_key_pressed(keyst, KROW_P0_6, KROW_P1_0)) {
+			kbd_select = 7;
+			boot_selected = 1;
+		}
+		if (aw9523_key_pressed(keyst, KROW_P0_6, KROW_P1_1)) {
+			kbd_select = 8;
 			boot_selected = 1;
 		}
 		if (aw9523_key_pressed(keyst, KROW_P0_5, KROW_P1_1)) {
@@ -323,11 +342,11 @@ void boot_mode_menu_select()
 		if (kbd_select >= 0)
 		{
 			select = kbd_select;
-			if (kbd_select >= 2 && skip_boot_option(boot2))
+			if (select >= 2 && skip_boot_option(boot2))
 				select++;
-			if (kbd_select >= 3 && skip_boot_option(boot3))
+			if (select >= 3 && skip_boot_option(boot3))
 				select++;
-			if (kbd_select >= 4 && skip_boot_option(boot4))
+			if (select >= 4 && skip_boot_option(boot4))
 				select++;
 		}
 
@@ -343,7 +362,12 @@ void boot_mode_menu_select()
 			count = print_boot_option(2, count, boot2, select, last_boot_select);
 			count = print_boot_option(3, count, boot3, select, last_boot_select);
 			count = print_boot_option(4, count, boot4, select, last_boot_select);
-			print_boot_option(5, count, "FASTBOOT", select, last_boot_select);
+			count = print_boot_option(5, count, "FASTBOOT", select, last_boot_select);
+			int prefix_len = strlen(lvm_lv_prefix);
+			for (int lv_index=0; lv_index<lvm_boot_lvs_count; lv_index++) {
+				const char *lvname = lvm_boot_name_for_index(lv_index) + prefix_len;
+				count = print_boot_option(6+lv_index, count, lvname, select, last_boot_select);
+			}
 
 			if (!autoBootInterrupted)
 				video_printf("\nAutomatic boot in %d seconds...\n", (timeout / 1000));
@@ -388,8 +412,9 @@ void boot_mode_menu_select()
 		advancedBootMode = NORMAL_BOOT4;
 	} else if (select == 5) {
 		g_boot_mode = FASTBOOT;
-	} else {
-		//pass
+	} else if (select > 5) {
+		g_boot_mode = NORMAL_BOOT;
+		advancedBootMode = NORMAL_BOOT_LVM_BASE + (select - 6);
 	}
 	video_clean_screen();
 	video_set_cursor(video_get_rows() / 2, 0);

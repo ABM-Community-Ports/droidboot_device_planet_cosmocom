@@ -46,6 +46,7 @@
 #include <platform/mt_typedefs.h>
 #include <platform/mt_disp_drv.h>
 #include <platform/mt_logo.h>
+#include <platform/disp_drv.h>
 
 #include <target/board.h>
 

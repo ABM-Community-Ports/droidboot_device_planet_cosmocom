@@ -6,6 +6,7 @@ INCLUDES += -Iplatform/$(PLATFORM)/include/platform
 # partition interface
 OBJS += $(LOCAL_DIR)/part_internal_wrapper.o \
 	$(LOCAL_DIR)/part_common.o
+OBJS += $(LOCAL_DIR)/part_read_write.o
 
 ifeq ($(MTK_PARTITION_COMMON), yes)
 OBJS += $(LOCAL_DIR)/env.o $(LOCAL_DIR)/efi.o
@@ -20,8 +21,10 @@ endif
 
 ifeq ($(MTK_EMMC_SUPPORT),yes)
 OBJS += $(LOCAL_DIR)/part_emmc_ufs.o
+OBJS += $(LOCAL_DIR)/part_lvm.o
 else ifeq ($(MTK_UFS_SUPPORT),yes)
 OBJS += $(LOCAL_DIR)/part_emmc_ufs.o
+OBJS += $(LOCAL_DIR)/part_lvm.o
 else
 OBJS += $(LOCAL_DIR)/part_nand.o
 endif

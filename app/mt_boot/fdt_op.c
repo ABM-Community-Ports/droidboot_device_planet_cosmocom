@@ -56,6 +56,7 @@
 #include <mkimg.h>
 #include <platform/mt_gpt.h>
 #include <platform/boot_mode.h>
+#include <part_lvm.h>
 
 void *g_fdt;
 DTBO_SRC g_dtbo_load_src = DTBO_FROM_STANDALONE;
@@ -289,7 +290,7 @@ int bldr_load_dtb(char *boot_load_partition)
 	u32 offset = 0;
 	unsigned char *magic;
 	struct bootimg_hdr *p_boot_hdr;
-	char part_name[16];
+	char part_name[64];
 	uint64_t recovery_dtbo_offset = 0;
 	char *bootp;
 
@@ -464,14 +465,21 @@ void load_device_tree(void)
 	else
 		part_name = "boot";
 #endif
-	if (g_boot_mode == RECOVERY_BOOT2)
+	if (g_boot_mode == RECOVERY_BOOT2) {
 		partition_get_name(PART_BOOT2_NUM, &part_name);
+	}
 
-	if (advancedBootMode == NORMAL_BOOT3)
+	if (advancedBootMode == NORMAL_BOOT3) {
 		partition_get_name(PART_BOOT3_NUM, &part_name);
+	}
 
-	if (advancedBootMode == NORMAL_BOOT4)
+	if (advancedBootMode == NORMAL_BOOT4) {
 		partition_get_name(PART_BOOT4_NUM, &part_name);
+	}
+
+	if (advancedBootMode >= NORMAL_BOOT_LVM_BASE && advancedBootMode < NORMAL_BOOT_LVM_MAX) {
+		part_name = lvm_boot_name_for_index(advancedBootMode-NORMAL_BOOT_LVM_BASE);
+	}
 
 #if defined(CFG_DTB_EARLY_LOADER_SUPPORT)
 	if (bldr_load_dtb(part_name) < 0)

@@ -43,6 +43,7 @@
 #include <platform/sec_export.h>
 #include <platform/verified_boot.h>
 #include <platform/mt_pmic_dlpt.h>
+#include <part_interface.h>
 //#include <dfo_boot_default.h>
 
 #ifdef MTK_TINYSYS_SCP_SUPPORT
@@ -811,7 +812,7 @@ int target_fdt_firmware(void *fdt, char *serialno)
             value = "recovery";
             break;
 		case RECOVERY_BOOT2:
-			partition_get_name(PART_BOOT2_NUM, value);
+			partition_get_name(PART_BOOT2_NUM, &value);
 			break;
 		default:
 			value = "normal";

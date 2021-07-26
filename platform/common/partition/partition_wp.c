@@ -50,6 +50,7 @@ unsigned int __attribute__((weak)) mmc_set_write_protect(int dev_num,u32 partiti
 		unsigned long blknr,u32 blkcnt,STORAGE_WP_TYPE type)
 {
 	pal_log_info("%s is not supported\n", __func__);
+	return -EINVAL;
 }
 #endif
 
@@ -58,6 +59,7 @@ int __attribute__((weak)) ufs_set_write_protect(int dev_num, ufs_logical_unit pa
 		unsigned long blknr,u32 blkcnt, STORAGE_WP_TYPE type)
 {
 	pal_log_info("%s is not supported\n", __func__);
+	return -EINVAL;
 }
 #endif
 

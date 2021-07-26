@@ -31,6 +31,7 @@
 #include <debug.h>
 #include <env.h>
 #include <platform/mt_gpio.h>
+#include <platform/timer.h>
 #ifndef USE_DTB_NO_DWS
 #include <cust_gpio_usage.h>
 #endif

@@ -261,6 +261,8 @@ static inline u8 *efi_guid_unparse(efi_guid_t *guid, u8 *out)
 	return out;
 }
 
+extern int real_partition_count;
+
 static int parse_gpt_header(u32 part_id, u64 header_lba, u8 *header_buf, u8 *entries_buf)
 {
 	int i;

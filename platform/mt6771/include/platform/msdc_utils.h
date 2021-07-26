@@ -144,6 +144,7 @@ extern unsigned int msdc_ntohl(unsigned int n);
 extern void msdc_get_field(volatile u32 *reg, u32 field, u32 *val);
 
 #define uffs(x)             msdc_uffs(x)
+#undef ntohl
 #define ntohl(n)            msdc_ntohl(n)
 #define get_field(r,f,v)    msdc_get_field((volatile u32*)r,f,&v)
 

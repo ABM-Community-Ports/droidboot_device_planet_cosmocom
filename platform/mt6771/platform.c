@@ -75,6 +75,8 @@
 #include <verified_boot_common.h>
 #include <platform/mtk_charger_intf.h>
 #include <rsc.h>
+#include <part_interface.h>
+#include <part_lvm.h>
 #ifdef MTK_SMC_ID_MGMT
 #include "mtk_secure_api.h"
 #endif
@@ -747,28 +749,29 @@ if(kernel_charging_boot() != 1 && g_boot_mode != ALARM_BOOT &&
 
 	/* If RECOVERY_AS_BOOT is enabled, there is no recovery partition. */
 #if defined(CFG_DTB_EARLY_LOADER_SUPPORT) && !defined(RECOVERY_AS_BOOT)
-	char *bootp;
+	char *bootp = NULL;
 	/* reload dtb when boot mode = recovery */
-	if ((g_boot_mode == RECOVERY_BOOT || g_boot_mode == RECOVERY_BOOT2) && (get_recovery_dtbo_loaded() != 1)){
+	if ((g_boot_mode == RECOVERY_BOOT || g_boot_mode == RECOVERY_BOOT2) && (get_recovery_dtbo_loaded() != 1)) {
 		if (g_boot_mode == RECOVERY_BOOT2) {
 			partition_get_name(PART_BOOT2_NUM, &bootp);
-			if (bldr_load_dtb(bootp) < 0)
-				dprintf(CRITICAL, "bldr_load_dtb fail\n");
 		}
 		else {
-                        if (bldr_load_dtb("recovery") < 0)
-                                dprintf(CRITICAL, "bldr_load_dtb fail\n");
+			bootp = "recovery";
 		}
 	}
 	if (advancedBootMode == NORMAL_BOOT3) {
 		partition_get_name(PART_BOOT3_NUM, &bootp);
-		if (bldr_load_dtb(bootp) < 0)
-			dprintf(CRITICAL, "bldr_load_dtb fail\n");
 	}
 	if (advancedBootMode == NORMAL_BOOT4) {
 		partition_get_name(PART_BOOT4_NUM, &bootp);
-		if (bldr_load_dtb(bootp) < 0)
-			dprintf(CRITICAL, "bldr_load_dtb fail\n");
+	}
+	if (advancedBootMode >= NORMAL_BOOT_LVM_BASE && advancedBootMode < NORMAL_BOOT_LVM_MAX) {
+		bootp = lvm_boot_name_for_index(advancedBootMode-NORMAL_BOOT_LVM_BASE);
+	}
+	if (g_boot_mode == NORMAL_BOOT || g_boot_mode == RECOVERY_BOOT || g_boot_mode == RECOVERY_BOOT2) {
+		if (bldr_load_dtb(bootp) < 0) {
+			dprintf(CRITICAL, "bldr_load_dtb fail (%s)\n", bootp);
+		}
 	}
 
 #endif  // CFG_DTB_EARLY_LOADER_SUPPORT

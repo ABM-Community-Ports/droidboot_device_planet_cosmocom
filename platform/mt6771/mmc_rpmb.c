@@ -30,7 +30,6 @@
 */
 
 #include "msdc.h"
-#include "mmc_rpmb.h"
 
 #define RPMB_KEY_DUMP 0
 
@@ -46,6 +45,8 @@ extern unsigned int g_random_pattern;
 u32 *shared_msg_addr = (u32 *)(LK_HMAC_BASE + 0x40);
 u32 *shared_hmac_addr = (u32 *)(LK_HMAC_BASE + 0xCE0);
 #endif
+
+#include "mmc_rpmb.h"
 
 #ifndef swab16
 #define swab16(x) \

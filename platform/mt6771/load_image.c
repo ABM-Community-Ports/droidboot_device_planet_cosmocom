@@ -58,6 +58,7 @@
 #include <storage_api.h>
 #include <pal_typedefs.h>
 #include <pal_log.h>
+#include <part_lvm.h>
 
 #define MODULE_NAME "LK_BOOT"
 #define BOOTIMG_DEF_PGSIZE  (2 * 1024)
@@ -496,10 +497,11 @@ static int mboot_android_check_bootimg_hdr(char *part_name,
 	uint32_t pg_sz;
 	char cmd_boot_name[TMPBUF_SIZE] = {0};
 
-        pal_log_err("ZBOOT LOAD_IMAGE mboot_android_check_bootimg_hdr %s\n", part_name);
-
+	pal_log_err("ZBOOT LOAD_IMAGE mboot_android_check_bootimg_hdr %s\n", part_name);
 	if (partition_exists(part_name) == PART_NOT_EXIST)
+	{
 		return -1;
+	}
 
 	addr = partition_get_offset_by_name(part_name);
 
@@ -508,9 +510,7 @@ static int mboot_android_check_bootimg_hdr(char *part_name,
 	//*
 
 	pal_log_err("part page addr is 0x%llx\n", addr);
-
-	len = partition_read(part_name, 0, (uchar *) boot_hdr,
-			     sizeof(struct bootimg_hdr));
+	len = partition_read(part_name, 0, (uchar *) boot_hdr, sizeof(struct bootimg_hdr));
 
 	if (len < 0) {
 		pal_log_err("[%s] %s boot image header read error. LINE: %d\n",
@@ -581,12 +581,16 @@ static int mboot_android_check_bootimg_hdr(char *part_name,
 		pal_log_info(" > boot image size = 0x%x\n", g_bimg_sz);
 	}
 
-	if (advancedBootMode == NORMAL_BOOT3 || advancedBootMode == NORMAL_BOOT4) {
+	if (advancedBootMode == NORMAL_BOOT3
+		|| advancedBootMode == NORMAL_BOOT4
+		|| advancedBootMode >= NORMAL_BOOT_LVM_BASE
+		|| advancedBootMode < NORMAL_BOOT_LVM_MAX)
+	{
 		g_boot_state = BOOT_STATE_GREEN;
- 	    	ret = set_boot_state_to_cmdline();
-	}
-	else
+		ret = set_boot_state_to_cmdline();
+	} else {
 		ret = verified_boot_init("boot", "boot");
+	}
 
 	if (ret)
 		return ret;
@@ -618,7 +622,7 @@ static int mboot_android_check_recoveryimg_hdr(char *part_name,
 	uint32_t pg_sz;
 	char cmd_boot_name[TMPBUF_SIZE] = {0};
 
-  pal_log_err("ZBOOT LOAD_IMAGE mboot_android_check_recoveryimg_hdr %s\n", part_name);
+	pal_log_err("ZBOOT LOAD_IMAGE mboot_android_check_recoveryimg_hdr %s\n", part_name);
 
 	if (partition_exists(part_name) == PART_NOT_EXIST)
 		return -1;
@@ -721,11 +725,14 @@ int mboot_android_load_bootimg_hdr(char *part_name, uint32_t addr)
 	long len;
 	struct bootimg_hdr *boot_hdr;
 
-  pal_log_err("ZBOOT LOAD_IMAGE mboot_android_load_bootimg_hdr %s\n", part_name);
+	pal_log_err("ZBOOT LOAD_IMAGE mboot_android_load_bootimg_hdr %s\n", part_name);
 
 	append_maxcpus_parameter();
-
-	if (partition_exists(part_name) == PART_NOT_EXIST) {
+	if ((advancedBootMode >= NORMAL_BOOT_LVM_BASE &&
+		advancedBootMode < NORMAL_BOOT_LVM_MAX &&
+		(advancedBootMode-NORMAL_BOOT_LVM_BASE) > count_of_lvm_bootable_lvs()) ||
+		partition_exists(part_name) == PART_NOT_EXIST)
+	{
 		pal_log_err("mboot_android_load_bootimg_hdr (%s), part = NULL\n",
 			part_name);
 		return -ENOENT;
@@ -791,8 +798,11 @@ int mboot_android_load_bootimg(char *part_name, uint32_t addr)
 	char cmd_boot_name[TMPBUF_SIZE] = {0};
 
 	pal_log_err("ZBOOT LOAD_IMAGE mboot_android_load_bootimg %s\n", part_name);
-
-	if (partition_exists(part_name) == PART_NOT_EXIST) {
+	if ((advancedBootMode >= NORMAL_BOOT_LVM_BASE &&
+		advancedBootMode < NORMAL_BOOT_LVM_MAX &&
+		(advancedBootMode-NORMAL_BOOT_LVM_BASE) > count_of_lvm_bootable_lvs()) ||
+		partition_exists(part_name) == PART_NOT_EXIST)
+	{
 		pal_log_err("mboot_android_load_bootimg , part = NULL\n");
 		return -ENOENT;
 	}
@@ -800,15 +810,20 @@ int mboot_android_load_bootimg(char *part_name, uint32_t addr)
 	//***************
 	//* not to include unused header
 	//*
-	start_addr = partition_get_offset_by_name(part_name);
+	if (advancedBootMode >= NORMAL_BOOT_LVM_BASE &&
+		advancedBootMode < NORMAL_BOOT_LVM_MAX)
+	{
+		start_addr = partition_get_offset(get_lvm_root_index());
+	} else {
+		start_addr = partition_get_offset_by_name(part_name);
+	}
 
 	/*
 	 * check mkimg header
 	 */
 	pal_log_info("check mkimg header\n");
+	len = partition_read(part_name, g_boot_hdr->page_sz, (uchar *) addr, MKIMG_HEADER_SZ);
 
-	len = partition_read(part_name, g_boot_hdr->page_sz, (uchar *)addr,
-			     MKIMG_HEADER_SZ);
 	if (len < 0) {
 		pal_log_err("[%s] %s partition read error. LINE: %d\n", MODULE_NAME,
 			part_name, __LINE__);
@@ -834,8 +849,7 @@ int mboot_android_load_bootimg(char *part_name, uint32_t addr)
 	pal_log_info(" > to   - 0x%x (starts with kernel img hdr)\n",
 		(uint32_t)addr);
 
-	len = partition_read(part_name, g_boot_hdr->page_sz, (uchar *)addr,
-			     (size_t)g_bimg_sz);
+	len = partition_read(part_name, g_boot_hdr->page_sz, (uchar *)addr, (size_t)g_bimg_sz);
 
 	// check ramdisk/rootfs header
 	g_rimg_sz = mboot_android_check_img_info(PART_ROOTFS, (part_hdr_t *)g_rmem_off);
@@ -852,12 +866,18 @@ int mboot_android_load_bootimg(char *part_name, uint32_t addr)
 		return len;
 	}
 
-	if (advancedBootMode == NORMAL_BOOT3 || advancedBootMode == NORMAL_BOOT4) {
+	if (advancedBootMode == NORMAL_BOOT3
+		|| advancedBootMode == NORMAL_BOOT4
+		|| advancedBootMode >= NORMAL_BOOT_LVM_BASE
+		|| advancedBootMode < NORMAL_BOOT_LVM_MAX)
+	{
 		g_boot_state = BOOT_STATE_GREEN;
  		ret = set_boot_state_to_cmdline();
 	}
 	else
+	{
 		ret = verified_boot_flow("boot", addr, g_bimg_sz - g_pg_sz);
+	}
 
 	snprintf(cmd_boot_name, TMPBUF_SIZE, "androidboot.bootpartition=%s", part_name);
 	cmdline_append(cmd_boot_name);
@@ -1009,7 +1029,7 @@ int mboot_recovery_load_raw_part_offset(char *part_name, uint32_t *addr,
 	long len;
 	uint32_t begin;
 
-  pal_log_err("ZBOOT LOAD_IMAGE mboot_recovery_load_raw_part_offset %s\n", part_name);
+	pal_log_err("ZBOOT LOAD_IMAGE mboot_recovery_load_raw_part_offset %s\n", part_name);
 
 	begin = get_timer(0);
 

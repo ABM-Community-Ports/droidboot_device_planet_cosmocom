@@ -47,8 +47,8 @@
 #include <error.h>
 #include <partition_error.h>
 
-/* dummy parameter is for prameter alignment */
-ssize_t partition_read(const char *part_name, off_t offset, u8* data, size_t size)
+/* dummy parameter is for parameter alignment */
+ssize_t partition_read_emmc_ufs(const char *part_name, off_t offset, u8* data, size_t size)
 {
 	ssize_t len;
 	uint64_t part_addr, part_size, read_addr;
@@ -100,7 +100,7 @@ ssize_t partition_read(const char *part_name, off_t offset, u8* data, size_t siz
 }
 
 /* dummy parameter is for prameter alignment */
-ssize_t partition_write(const char *part_name, off_t offset, u8* data, size_t size)
+ssize_t partition_write_emmc_ufs(const char *part_name, off_t offset, u8* data, size_t size)
 {
 	ssize_t len;
 	uint64_t part_addr, part_size, write_addr;
@@ -148,7 +148,7 @@ ssize_t partition_write(const char *part_name, off_t offset, u8* data, size_t si
 	return len;
 }
 
-int32_t partition_erase(const char *part_name)
+int32_t partition_erase_emmc_ufs(const char *part_name)
 {
 	int32_t index;
 	uint32_t part_id;
