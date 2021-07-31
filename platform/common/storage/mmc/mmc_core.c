@@ -39,6 +39,7 @@
 
 static struct mmc_host sd_host[NR_MMC];
 static struct mmc_card sd_card[NR_MMC];
+bool emmc_boot = false;
 
 static const unsigned int tran_exp[] = {
 	10000,      100000,     1000000,    10000000,
@@ -3843,6 +3844,9 @@ int mmc_init(int id, u32 trans_mode)
 	msdc_pr_info("[%s]: start r/w compare test \n", __func__);
 	emmc_r_w_compare_test();
 #endif
+
+	if (!err)
+		emmc_boot = true;
 
 	return err;
 }

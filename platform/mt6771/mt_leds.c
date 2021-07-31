@@ -44,6 +44,7 @@
 #include <platform/mt_gpt.h>
 #include <platform/primary_display.h>
 #include <platform/ddp_bls.h>
+#include <platform/mt6370_pmu_bled.h>
 #include <libfdt.h>
 
 struct cust_mt65xx_led *get_cust_led_dtsi(void);
@@ -142,158 +143,6 @@ static int mt65xx_led_set_cust(struct cust_mt65xx_led *cust, int level);
 /****************************************************************************
  * internal functions
  ***************************************************************************/
-#if defined(MTK_MT6370_PMU_BLED_SUPPORT) // for mt6370 backlight support
-struct mt6370_bled_config_t {
-	u8 addr;
-	u8 val;
-};
-
-static struct mt6370_bled_config_t mt6370_bled_settings[8] = {
-	{.addr = 0xA1, .val = 0x89},
-	{.addr = 0xA2, .val = 0x04},
-	{.addr = 0xA3, .val = 0x00},
-	{.addr = 0xA4, .val = 0x00},
-	{.addr = 0xA5, .val = 0x00},
-	{.addr = 0xA6, .val = 0x00},
-	{.addr = 0xA7, .val = 0x00},
-	{.addr = 0xA0, .val = 0x42}
-};
-
-// 6370 default pwm setting, used when dts not found
-static struct mt6370_bled_config_t mt6370_bled_settings_default_pwm[8] = {
-	{.addr = 0xA1, .val = 0xed},
-	{.addr = 0xA2, .val = 0xb4},
-	{.addr = 0xA3, .val = 0x30},
-	{.addr = 0xA4, .val = 0x07},
-	{.addr = 0xA5, .val = 0x3f},
-	{.addr = 0xA6, .val = 0x00},
-	{.addr = 0xA7, .val = 0x08},
-	{.addr = 0xA0, .val = 0x7e}
-};
-
-static struct mt_i2c_t mt6370_bled_i2c = {
-	.id = I2C5,
-	.addr = 0x34,
-	.mode = HS_MODE,
-	.speed = 3400,
-	.pushpull = true,
-};
-
-static void mt6370_i2c_write_byte(struct mt_i2c_t *i2c, u8 cmd, u8 data)
-{
-	unsigned int ret = I2C_OK;
-	unsigned char write_buf[2] = {cmd, data};
-
-	ret = i2c_write(i2c, write_buf, 2);
-	if (ret != I2C_OK)
-		LEDS_DEBUG("[LEDS] %s: I2CW[0x%02X] = 0x%02X failed, code = %d\n", __func__, cmd, data, ret);
-}
-
-static unsigned int led_fdt_getprop_bool(const void *fdt, int nodeoffset,
-						const char *name)
-{
-	const void *data = NULL;
-	int len = 0;
-
-	data = fdt_getprop(fdt, nodeoffset, name, &len);
-	if (data)
-		return true;
-	else
-		return false;
-}
-
-#define MT6370_BLED_EN  (0x40)
-#define MT6370_BLED_EXTEN (0x80)
-#define MT6370_BLED_CHANENSHFT 2
-#define MT6370_BLED_MAPLINEAR (0x02)
-#define MT6370_BLED_OVPSHFT (5)
-#define MT6370_BLED_OCPSHFT (1)
-#define MT6370_BLED_PWMSHIFT (7)
-#define MT6370_BLED_PWMDSHFT (5)
-#define MT6370_BLED_PWMFSHFT (3)
-#define MT6370_BLFLRAMP_SHFT (3)
-#define MT6370_BLED_RAMPTSHFT (4)
-
-static void mt6370_bled_parsing_dts(void *fdt)
-{
-	int offset, sub_offset;
-	uint32_t val;
-
-#if defined(CFG_DTB_EARLY_LOADER_SUPPORT)
-	offset = fdt_path_offset(g_fdt, "/mt6370_pmu_dts");
-	sub_offset = fdt_subnode_offset(g_fdt, offset, "bled");
-	if (offset >= 0 && sub_offset >= 0) {
-		val = led_fdt_getprop_bool(g_fdt, sub_offset, "mt,ext_en_pin");
-		LEDS_INFO("[LEDS] mt,ext_en_pin val = %d\n", val);
-		if (val) {
-			mt6370_bled_settings[7].val &= ~(MT6370_BLED_EN | MT6370_BLED_EXTEN);
-			mt6370_bled_settings[7].val |= MT6370_BLED_EXTEN;
-		}
-		val = led_fdt_getprop_u32(g_fdt, sub_offset, "mt,chan_en");
-		LEDS_INFO("[LEDS] mt,chan_en val = %d\n", val);
-		if (val)
-			mt6370_bled_settings[7].val |= (val << MT6370_BLED_CHANENSHFT);
-		val = led_fdt_getprop_bool(g_fdt, sub_offset, "mt,map_linear");
-		LEDS_INFO("[LEDS] mt,map_linear = %d\n", val);
-		if (!val)
-			mt6370_bled_settings[7].val &= ~(MT6370_BLED_MAPLINEAR);
-		val = led_fdt_getprop_u32(g_fdt, sub_offset, "mt,bl_ovp_level");
-		LEDS_INFO("[LEDS] mt,bl_ovp_level = %d\n", val);
-		if (val)
-			mt6370_bled_settings[0].val |= (val << MT6370_BLED_OVPSHFT);
-		val = led_fdt_getprop_u32(g_fdt, sub_offset, "mt,bl_ocp_level");
-		LEDS_INFO("[LEDS] mt,bl_ocp_level = %d\n", val);
-		if (val)
-			mt6370_bled_settings[0].val |= (val << MT6370_BLED_OCPSHFT);
-		val = led_fdt_getprop_bool(g_fdt, sub_offset, "mt,use_pwm");
-		LEDS_INFO("[LEDS] mt,use_pwm = %d\n", val);
-		if (val)
-			mt6370_bled_settings[1].val |= (val << MT6370_BLED_PWMSHIFT);
-		val = led_fdt_getprop_u32(g_fdt, sub_offset, "mt,pwm_fsample");
-		LEDS_INFO("[LEDS] mt,pwm_fsample = %d\n", val);
-		if (val)
-			mt6370_bled_settings[1].val |= (val << MT6370_BLED_PWMFSHFT);
-		val = led_fdt_getprop_u32(g_fdt, sub_offset, "mt,pwm_deglitch");
-		LEDS_INFO("[LEDS] mt,pwm_deglitch = %d\n", val);
-		if (val)
-			mt6370_bled_settings[1].val |= (val << MT6370_BLED_PWMDSHFT);
-		val = led_fdt_getprop_u32(g_fdt, sub_offset, "mt,bled_ramptime");
-		LEDS_INFO("[LEDS] mt,bled_ramptime = %d\n", val);
-		if (val)
-			mt6370_bled_settings[2].val |= (val << MT6370_BLED_RAMPTSHFT);
-		val = led_fdt_getprop_u32(g_fdt, sub_offset, "mt,bled_flash_ramp");
-		LEDS_INFO("[LEDS] mt,bled_flash_ramp = %d\n", val);
-		if (val)
-			mt6370_bled_settings[6].val |= (val << MT6370_BLFLRAMP_SHFT);
-		val = led_fdt_getprop_u32(g_fdt, sub_offset, "mt,max_bled_brightness");
-		LEDS_INFO("[LEDS] mt,max_bled_brightness = %d\n", val);
-		if (val) {
-			val = ((u64)val * 255) >> 8;
-			mt6370_bled_settings[3].val |= (val & 0x7);
-			mt6370_bled_settings[4].val |= ((val >> 3) & 0xff);
-		}
-	}
-	else
-#endif
-	{
-		memcpy(mt6370_bled_settings, mt6370_bled_settings_default_pwm, sizeof(mt6370_bled_settings));
-		LEDS_INFO("[LEDS] cannot read settings from dts, using default setting\n");
-	}
-}
-
-static void mt6370_init_bled()
-{
-	unsigned int i;
-
-	LEDS_INFO("[LEDS]LK: %s\n", __func__);
-	mt6370_bled_parsing_dts(g_fdt);
-	for (i = 0; i < sizeof(mt6370_bled_settings) / sizeof(struct mt6370_bled_config_t); i++) {
-		LEDS_INFO("[LEDS] set addr 0x%02X = 0x%02x\n", mt6370_bled_settings[i].addr, mt6370_bled_settings[i].val);
-		mt6370_i2c_write_byte(&mt6370_bled_i2c, mt6370_bled_settings[i].addr, mt6370_bled_settings[i].val);
-	}
-}
-#endif
-
 static int brightness_mapto64(int level)
 {
 	if (level < 30)
@@ -591,7 +440,7 @@ void leds_battery_medium_charging(void)
 void leds_init(void)
 {
 #if defined(MTK_MT6370_PMU_BLED_SUPPORT) // for mt6370 backlight support
-	mt6370_init_bled();
+	mt6370_bled_probe();
 #endif
 	LEDS_INFO("[LEDS]LK: leds_init: mt65xx_backlight_off \n\r");
 	mt65xx_backlight_off();

@@ -1574,11 +1574,27 @@ void DSI_PHY_TIMCONFIG(DISP_MODULE_ENUM module, void* cmdq, LCM_DSI_PARAMS *dsi_
 #define NS_TO_CYCLE(n, c)   ((n) / (c))
 
 	hs_trail_m=1;
-	hs_trail_n= (dsi_params->HS_TRAIL == 0) ? NS_TO_CYCLE(((hs_trail_m * 0x4 * ui) + 0x50), cycle_time) : dsi_params->HS_TRAIL;
+#ifndef MTK_DISABLE_PHY_TIMMING_OPTIMIZE
+	hs_trail_n= (dsi_params->HS_TRAIL == 0) ?
+		(NS_TO_CYCLE(((hs_trail_m * 0x4 * ui) + 0x50)*
+		dsi_params->PLL_CLOCK * 2, 0x1F40) + 0x1) :
+		dsi_params->HS_TRAIL;
+#else
+	hs_trail_n= (dsi_params->HS_TRAIL == 0) ?
+		NS_TO_CYCLE(((hs_trail_m * 0x4 * ui) + 0x50), cycle_time) :
+		dsi_params->HS_TRAIL;
+#endif
 	// +3 is recommended from designer becauase of HW latency
 	timcon0.HS_TRAIL = (hs_trail_m > hs_trail_n) ? hs_trail_m : hs_trail_n;
-
-	timcon0.HS_PRPR = (dsi_params->HS_PRPR == 0) ? NS_TO_CYCLE((0x40 + 0x5 * ui), cycle_time) : dsi_params->HS_PRPR;
+#ifndef MTK_DISABLE_PHY_TIMMING_OPTIMIZE
+	timcon0.HS_PRPR = (dsi_params->HS_PRPR == 0) ?
+		(NS_TO_CYCLE((0x40 + 0x5 * ui), cycle_time) + 0x1) :
+		dsi_params->HS_PRPR;
+#else
+	timcon0.HS_PRPR = (dsi_params->HS_PRPR == 0) ?
+		NS_TO_CYCLE((0x40 + 0x5 * ui), cycle_time) :
+		dsi_params->HS_PRPR;
+#endif
 	// HS_PRPR can't be 1.
 	if (timcon0.HS_PRPR < 1)
 		timcon0.HS_PRPR = 1;
@@ -1586,8 +1602,15 @@ void DSI_PHY_TIMCONFIG(DISP_MODULE_ENUM module, void* cmdq, LCM_DSI_PARAMS *dsi_
 	timcon0.HS_ZERO = (dsi_params->HS_ZERO == 0) ? NS_TO_CYCLE((0xC8 + 0x0a * ui), cycle_time) : dsi_params->HS_ZERO;
 	if (timcon0.HS_ZERO > timcon0.HS_PRPR)
 		timcon0.HS_ZERO -= timcon0.HS_PRPR;
-
-	timcon0.LPX     = (dsi_params->LPX == 0) ? NS_TO_CYCLE(0x50, cycle_time) : dsi_params->LPX;
+#ifndef MTK_DISABLE_PHY_TIMMING_OPTIMIZE
+	timcon0.LPX = (dsi_params->LPX == 0) ?
+		(NS_TO_CYCLE(dsi_params->PLL_CLOCK * 2 * 0x4b, 0x1F40) + 0x1) :
+		dsi_params->LPX;
+#else
+	timcon0.LPX = (dsi_params->LPX == 0) ?
+		NS_TO_CYCLE(0x50, cycle_time) :
+		dsi_params->LPX;
+#endif
 	if (timcon0.LPX < 1)
 		timcon0.LPX = 1;
 
@@ -1601,8 +1624,17 @@ void DSI_PHY_TIMCONFIG(DISP_MODULE_ENUM module, void* cmdq, LCM_DSI_PARAMS *dsi_
 	//  Clk_post = 60 ns + 128 UI.
 	// --------------------------------------------------------------
 	timcon1.DA_HS_EXIT  = (dsi_params->DA_HS_EXIT == 0) ? (0x2 * timcon0.LPX) : dsi_params->DA_HS_EXIT;
-
-	timcon2.CLK_TRAIL   = ((dsi_params->CLK_TRAIL == 0) ? NS_TO_CYCLE(0x60, cycle_time) : dsi_params->CLK_TRAIL) + 0x01;
+#ifndef MTK_DISABLE_PHY_TIMMING_OPTIMIZE
+	timcon2.CLK_TRAIL = ((dsi_params->CLK_TRAIL == 0) ?
+		NS_TO_CYCLE(0x64 * dsi_params->PLL_CLOCK * 2, 0x1F40) :
+		dsi_params->CLK_TRAIL)
+		+ 0x01;
+#else
+	timcon2.CLK_TRAIL = ((dsi_params->CLK_TRAIL == 0) ?
+		NS_TO_CYCLE(0x60, cycle_time) :
+		dsi_params->CLK_TRAIL)
+		+ 0x01;
+#endif
 	// CLK_TRAIL can't be 1.
 	if (timcon2.CLK_TRAIL < 2)
 		timcon2.CLK_TRAIL = 2;
@@ -1610,8 +1642,15 @@ void DSI_PHY_TIMCONFIG(DISP_MODULE_ENUM module, void* cmdq, LCM_DSI_PARAMS *dsi_
 	//  timcon2.LPX_WAIT    = (dsi_params->LPX_WAIT == 0) ? 1 : dsi_params->LPX_WAIT;
 	timcon2.CONT_DET    = dsi_params->CONT_DET;
 	timcon2.CLK_ZERO = (dsi_params->CLK_ZERO == 0) ? NS_TO_CYCLE(0x190, cycle_time) : dsi_params->CLK_ZERO;
-
-	timcon3.CLK_HS_PRPR = (dsi_params->CLK_HS_PRPR == 0) ? NS_TO_CYCLE(0x40, cycle_time) : dsi_params->CLK_HS_PRPR;
+#ifndef MTK_DISABLE_PHY_TIMMING_OPTIMIZE
+	timcon3.CLK_HS_PRPR = (dsi_params->CLK_HS_PRPR == 0) ?
+		NS_TO_CYCLE(0x50 * dsi_params->PLL_CLOCK * 2, 0x1F40) :
+		dsi_params->CLK_HS_PRPR;
+#else
+	timcon3.CLK_HS_PRPR = (dsi_params->CLK_HS_PRPR == 0) ?
+		NS_TO_CYCLE(0x40, cycle_time) :
+		dsi_params->CLK_HS_PRPR;
+#endif
 	if (timcon3.CLK_HS_PRPR < 1)
 		timcon3.CLK_HS_PRPR = 1;
 	timcon3.CLK_HS_EXIT= (dsi_params->CLK_HS_EXIT == 0) ? (0x2 * timcon0.LPX) : dsi_params->CLK_HS_EXIT;

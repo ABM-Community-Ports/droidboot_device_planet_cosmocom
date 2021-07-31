@@ -97,6 +97,14 @@ static const char * const rpmb_err_msg[] = {
 };
 
 #if defined(MMC_MSDC_DRV_LK) && !defined(MTK_UFS_SUPPORT)
+/*
+ * CVE-2020-0436
+ * Increase the write count to prevent DOS attack
+ */
+#define MMC_DUMMY_WRITE_RPMB
+
+static void mmc_dummy_rpmb_write();
+extern bool emmc_boot;
 int init_rpmb_sharemem(void)
 {
 	uint32_t start, size;
@@ -114,6 +122,11 @@ int init_rpmb_sharemem(void)
 		msdc_pr_err("[%s]: RPMB rpmb_init error, ret = %d \n", __func__, ret);
 		return ret;
 	}
+
+#ifdef MMC_DUMMY_WRITE_RPMB
+	if (emmc_boot)
+		mmc_dummy_rpmb_write();
+#endif
 	return 0;
 }
 #endif
@@ -538,6 +551,27 @@ u32 mmc_rpmb_get_rel_wr_sec_c(void)
 }
 
 #if defined(MMC_MSDC_DRV_LK)
+#define RPMB_DUMMY_SIZE 8
+/*
+ *  Make sure the write count is incremented at every boot time.
+ *  to prevent linux kernel Replay Attacks.
+ */
+static void mmc_dummy_rpmb_write()
+{
+	int ret = 0;
+	u8 data_buf[RPMB_DUMMY_SIZE] = {0};
+
+	ret = mmc_rpmb_read_data(0x0, data_buf, RPMB_DUMMY_SIZE);
+	if (ret) {
+		msdc_pr_err("[%s] mmc_dummy_rpmb_read failed\n", __func__);
+		return;
+	}
+
+	ret = mmc_rpmb_write_data(0x0, data_buf, RPMB_DUMMY_SIZE);
+	if (ret)
+		msdc_pr_err("[%s] mmc_dummy_rpmb_write failed\n", __func__);
+}
+
 int mmc_rpmb_read_data(u32 blkAddr, u32 *buf, u32 bufLen)
 {
 	struct mmc_card *card = mmc_get_card(0);

@@ -68,6 +68,13 @@ bool get_atm_enable_status(void)
 	char part_name[] = "proinfo";
 	unsigned char *b_buf = NULL, *s_buf = NULL;
 	const int flag_len = 8;
+	extern int efuse_sbc_enabled(void);
+
+	/* Disable ATM Mode Once eFuse SBC_EN Is Programmed */
+	if(efuse_sbc_enabled()) {
+		dprintf(ALWAYS, "[ATM] is disabled\n");
+		return false;
+	}
 
 	s_buf = (unsigned char *)malloc((OFFSET + flag_len) * sizeof(unsigned char));
 	if (s_buf)

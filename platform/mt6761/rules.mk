@@ -397,12 +397,13 @@ ifeq ($(MTK_PUMP_EXPRESS_PLUS_SUPPORT),yes)
 DEFINES += MTK_PUMP_EXPRESS_PLUS_SUPPORT
 endif
 
+ifneq ($(MTK_CHARGER_NEW_ARCH), yes)
+
 ifeq ($(MTK_MT6370_PMU_BLED_SUPPORT),yes)
 	OBJS += $(LOCAL_DIR)/mt6370_pmu_bled.o
 	DEFINES += MTK_MT6370_PMU_BLED_SUPPORT
 endif
 
-ifneq ($(MTK_CHARGER_NEW_ARCH), yes)
 	OBJS += $(LOCAL_DIR)/mt_battery.o
 
 ifeq ($(MTK_BQ24261_SUPPORT),yes)

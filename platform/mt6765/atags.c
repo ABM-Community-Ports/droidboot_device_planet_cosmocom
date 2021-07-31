@@ -694,6 +694,8 @@ int target_fdt_model(void *fdt)
 			if(CAP_IS_C(cap)) {
 				if(CAP_IS_B(cap)) {
 					model_name = "MT6762V/CB";
+					if (platform_type)
+						model_name = "MT8768CE";
 				} else if(CAP_IS_A(cap)) {
 					model_name = "MT6762V/CA";
 					if (platform_type)
@@ -704,6 +706,8 @@ int target_fdt_model(void *fdt)
 			} else {
 				if(CAP_IS_B(cap)) {
 					model_name = "MT6762V/WB";
+					if (platform_type)
+						model_name = "MT8768WE";
 				} else if(CAP_IS_A(cap)) {
 					model_name = "MT6762V/WA";
 					if (platform_type)

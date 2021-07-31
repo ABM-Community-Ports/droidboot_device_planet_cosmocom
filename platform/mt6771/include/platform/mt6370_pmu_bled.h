@@ -32,7 +32,52 @@
 #ifndef __MT6370_PMU_BLED_H
 #define __MT6370_PMU_BLED_H
 
-extern int bled_read_reg(u8 cmd, u8 *data);
-extern int bled_write_reg(u8 cmd, u8 data);
+#ifdef MTK_MT6370_PMU_BLED_SUPPORT
+int mt6370_bled_probe(void);
+#else
+static inline int mt6370_bled_probe(void)
+{
+	return 0;
+}
+#endif
+
+#ifndef BIT
+#define BIT(nr) (1 << (nr))
+#endif
+
+#define MT6370_SLAVE_ADDR		(0x34)
+#define MT6372_VENDOR_ID		(0x90)
+#define MT6372C_VENDOR_ID		(0xB0)
+
+#define MT6370_PMU_REG_DEVINFO		(0x00)
+/* MT6370_PMU_REG_BLEN : 0xA0 */
+#define MT6370_BLED_CHANENSHFT		2
+#define MT6370_BLED_EXTEN		BIT(7)
+#define MT6370_BLED_EN			BIT(6)
+#define MT6370_BLED_MAPLINEAR		BIT(1)
+
+/* MT6370_PMU_REG_BLBSTCTRL : 0xA1 */
+#define MT6370_BLED_OVPSHFT		5
+#define MT6370_BLED_OCPSHFT		1
+
+/* MT6370_PMU_REG_BLPWM : 0xA2 */
+#define MT6370_BLED_PWMSHIFT		7
+#define MT6370_BLED_PWMDSHFT		5
+#define MT6370_BLED_PWMFSHFT		3
+#define MT6370_BLED_PWMHESHFT		2
+#define MT6370_BLED_PWMHSHFT		0
+#define MT6370_BLED_PWMHE		BIT(MT6370_BLED_PWMHESHFT)
+
+/* MT6370_PMU_REG_BLCTRL : 0xA3 */
+#define MT6370_BLED_RAMPTSHFT		4
+
+/* MT6370_PMU_REG_BLFL : 0xA7 */
+#define MT6370_BLFLRAMP_SHFT		3
+
+/* MT6370_PMU_REG_BLMODECTRL : 0xAD */
+#define MT6370_BLED_CURR_SCALESHFT	4
+#define MT6370_PWM_LPF_COEFSHFT		2
+#define MT6370_PWM_LPF_ENSHFT		1
+#define MT6370_BLED_CURR_MODESHFT	0
 
 #endif /* __MT6370_PMU_BLED_H */

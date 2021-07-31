@@ -36,7 +36,7 @@
 #include <printf.h>
 #include <string.h>
 #include "mt6370_pmu_bled.h"
-#include "mt6370_pmu_charger.h"
+#include "mtk_charger.h"
 
 #define MT6370_PMU_BLED_LK_DRV_VERSION "1.0.3_MTK"
 

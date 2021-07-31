@@ -663,6 +663,7 @@ int target_fdt_model(void *fdt)
 {
 	unsigned int platform_type = (get_devinfo_with_index(4) >> 20) & 0x1; /* 0: smartphone, 1: tablet */
 	unsigned int segment = get_devinfo_with_index(30) & 0xFF;
+	unsigned int md_type = get_devinfo_with_index(6) & 0x1;
 	int model_index = 0;
 	const char *model_name[] = {
 		"MT6771V/C(ENG)",
@@ -687,8 +688,10 @@ int target_fdt_model(void *fdt)
 		case 0x02:
 		case 0x04:
 			model_index = 1;
-			if (platform_type)
+			if (platform_type && md_type)
 				model_index = 4;
+			if (platform_type && !md_type)
+				model_index = 9;
 			break;
 		case 0x12:
 		case 0x14:
@@ -698,6 +701,8 @@ int target_fdt_model(void *fdt)
 			break;
 		case 0x24:
 			model_index = 5;
+			if (platform_type)
+				model_index = 9;
 			break;
 		case 0x34:
 			model_index = 6;
