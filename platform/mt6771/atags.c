@@ -817,7 +817,7 @@ int target_fdt_firmware(void *fdt, char *serialno)
             value = "recovery";
             break;
 		case RECOVERY_BOOT2:
-			partition_get_name(PART_BOOT2_NUM, &value);
+			partition_get_name(partition_get_bootable(PartBoot2Num), &value);
 			break;
 		default:
 			value = "normal";

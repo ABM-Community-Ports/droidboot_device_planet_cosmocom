@@ -32,11 +32,11 @@
 #ifndef __MT_GPT_COMMON_H__
 #define __MT_GPT_COMMON_H__
 
-// Something changed in latest LK version
-// Had to increment detected partition number by 1
-#define PART_BOOT2_NUM 39
-#define PART_BOOT3_NUM 42
-#define PART_BOOT4_NUM 43
+enum {
+    PartBoot2Num,
+    PartBoot3Num,
+    PartBoot4num
+};
 
 #if (GPT_VER==4)
 #include "timer/mt_gpt_v4.h"

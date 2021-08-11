@@ -950,7 +950,7 @@ int mboot_android_load_recoveryimg(char *part_name, uint32_t addr)
 	// check ramdisk/rootfs header
 	if (g_boot_mode == RECOVERY_BOOT2) {
 		char *bootp;
-		partition_get_name(PART_BOOT2_NUM, &bootp);
+		partition_get_name(partition_get_bootable(PartBoot2Num), &bootp);
         g_rimg_sz = mboot_android_check_img_info(bootp, (part_hdr_t *)g_rmem_off);
 	}
 	else

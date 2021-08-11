@@ -285,16 +285,16 @@ void boot_mode_select(void)
 	}
 #endif
 
-  char *userdataPartition;
-	partition_get_name(PART_BOOT2_NUM, &userdataPartition);
+	char *userdataPartition;
+	partition_get_name(partition_get_bootable(PartBoot2Num), &userdataPartition);
 	if (strcmp(userdataPartition, "userdata") == 0)
 		dprintf(CRITICAL, "Detected single-boot Cosmo - partition 38: %s\n", userdataPartition);
 	else {
 		dprintf(CRITICAL, "Detected multi-boot Cosmo - partition 38: %s\n", userdataPartition);
 		mtk_wdt_disable();
 		/*************************/
-	  mt65xx_backlight_on();
-	  /*************************/
+		mt65xx_backlight_on();
+		/*************************/
 		boot_mode_menu_select();
 		mtk_wdt_init();
 	}

@@ -50,7 +50,7 @@
 #define INT_POL_CTL0  (MCUCFG_BASE + 0xA80)
 
 /*
- * Define hadware registers.
+ * Define hardware registers.
  */
 
 /*

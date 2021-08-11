@@ -99,6 +99,7 @@ u32 partition_get_region(int index);
 u64 partition_get_offset(int index);
 u64 partition_get_size(int index);
 int partition_get_type(int index, char **p_type);
+int partition_get_bootable(int count);
 int partition_get_name(int index, char **p_name);
 int is_support_erase(int index);
 int is_support_flash(int index);

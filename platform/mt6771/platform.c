@@ -753,17 +753,17 @@ if(kernel_charging_boot() != 1 && g_boot_mode != ALARM_BOOT &&
 	/* reload dtb when boot mode = recovery */
 	if ((g_boot_mode == RECOVERY_BOOT || g_boot_mode == RECOVERY_BOOT2) && (get_recovery_dtbo_loaded() != 1)) {
 		if (g_boot_mode == RECOVERY_BOOT2) {
-			partition_get_name(PART_BOOT2_NUM, &bootp);
+			partition_get_name(partition_get_bootable(PartBoot2Num), &bootp);
 		}
 		else {
 			bootp = "recovery";
 		}
 	}
 	if (advancedBootMode == NORMAL_BOOT3) {
-		partition_get_name(PART_BOOT3_NUM, &bootp);
+		partition_get_name(partition_get_bootable(PartBoot3Num), &bootp);
 	}
 	if (advancedBootMode == NORMAL_BOOT4) {
-		partition_get_name(PART_BOOT4_NUM, &bootp);
+		partition_get_name(partition_get_bootable(PartBoot4num), &bootp);
 	}
 	if (advancedBootMode >= NORMAL_BOOT_LVM_BASE && advancedBootMode < NORMAL_BOOT_LVM_MAX) {
 		bootp = lvm_boot_name_for_index(advancedBootMode-NORMAL_BOOT_LVM_BASE);

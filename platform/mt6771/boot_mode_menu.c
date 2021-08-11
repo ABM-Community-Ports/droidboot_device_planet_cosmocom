@@ -224,9 +224,9 @@ void boot_mode_menu_select()
 	aw9523_init_keycfg(keyst);
 	hall_init();
 
-	partition_get_name(PART_BOOT2_NUM, &boot2);
-	partition_get_name(PART_BOOT3_NUM, &boot3);
-	partition_get_name(PART_BOOT4_NUM, &boot4);
+	partition_get_name(partition_get_bootable(PartBoot2Num), &boot2);
+	partition_get_name(partition_get_bootable(PartBoot3Num), &boot3);
+	partition_get_name(partition_get_bootable(PartBoot4num), &boot4);
 
 #ifdef MACH_FPGA_NO_DISPLAY
 	g_boot_mode = RECOVERY_BOOT;

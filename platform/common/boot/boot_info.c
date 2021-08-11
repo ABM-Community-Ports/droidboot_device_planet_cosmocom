@@ -77,17 +77,17 @@ char *get_bootimg_partition_name(uint32_t bootimg_type)
 	char *bootp;
 
     if (g_boot_mode == RECOVERY_BOOT2) {
-		partition_get_name(PART_BOOT2_NUM, &bootp);
+		partition_get_name(partition_get_bootable(PartBoot2Num), &bootp);
 		result = bootp;
 	}
 
 	if (advancedBootMode == NORMAL_BOOT3) {
-		partition_get_name(PART_BOOT3_NUM, &bootp);
+		partition_get_name(partition_get_bootable(PartBoot3Num), &bootp);
 		result = bootp;
 	}
 
 	if (advancedBootMode == NORMAL_BOOT4) {
-		partition_get_name(PART_BOOT4_NUM, &bootp);
+		partition_get_name(partition_get_bootable(PartBoot4num), &bootp);
 		result = bootp;
 	}
 

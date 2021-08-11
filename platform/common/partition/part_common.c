@@ -251,6 +251,28 @@ u64 partition_get_size(int index)
 	return (u64)g_partition_all[index].nr_sects * dev->blkdev->blksz;
 }
 
+static const char *system_partitions[]={"cache","otp","flashinfo","linux",NULL};
+
+int partition_get_bootable(int count)
+{
+    int found=0;
+    for (int p_index=38; p_index < PART_MAX_COUNT; p_index++) {
+        bool skip=FALSE;
+        for (int sp_index=0; system_partitions[sp_index]!=NULL; sp_index++) {
+            if (0 == strncmp(g_partition_all[p_index].info->name,system_partitions[sp_index], PART_META_INFO_NAMELEN)) {
+                skip=TRUE;
+            }
+        }
+        if (!skip) {
+            if (count == found) {
+                return p_index;
+            }
+            found++;
+        }
+    }
+    return -1;
+}
+
 int partition_get_name(int index, char **p_name)
 {
 	if (index < 0 || index >= PART_MAX_COUNT)
