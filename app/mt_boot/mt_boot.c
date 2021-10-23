@@ -1687,7 +1687,7 @@ int boot_linux_from_storage(void)
 }
 
 #if defined(CONFIG_MTK_USB_UNIQUE_SERIAL) || (defined(MTK_SECURITY_SW_SUPPORT) && defined(MTK_SEC_FASTBOOT_UNLOCK_SUPPORT))
-static char udc_chr[32] = {"ABCDEFGHIJKLMNOPQRSTUVWSYZ456789"};
+static char udc_chr[32] = {"ABCDEFGHIJKLMNOPQRSTUVWXYZ456789"};
 
 int get_serial(u64 hwkey, u32 chipid, char ser[SERIALNO_LEN])
 {
