@@ -427,12 +427,13 @@ void sw_env()
 			if (get_env("hibboot") != NULL && atoi(get_env("hibboot")) == 1)
 				video_printf(" => HIBERNATION BOOT\n");
 			else {
-			    if (advancedBootMode == NORMAL_BOOT3)
-				video_printf(" => BOOT 3\n");
-			    else if (advancedBootMode == NORMAL_BOOT4)
-	                        video_printf(" => BOOT 4\n");
-			    else
-				video_printf(" => NORMAL BOOT\n");
+				if (advancedBootMode == NORMAL_BOOT3) {
+					video_printf(" => BOOT 3\n");
+				} else if (advancedBootMode == NORMAL_BOOT4) {
+					video_printf(" => BOOT 4\n");
+				} else {
+					video_printf(" => NORMAL BOOT\n");
+				}
 			}
 			break;
 		case ADVMETA_BOOT:

@@ -160,10 +160,11 @@ bool dtb_overlay(void *fdt, int size, uint64_t recovery_dtbo_offset)
 		part_name = get_dtbo_part_name();
 	}
 	else {
-		if (g_boot_mode == RECOVERY_BOOT2)
+		if (g_boot_mode == RECOVERY_BOOT2) {
 			partition_get_name(partition_get_bootable(PartBoot2Num), &part_name);
-		else
-		    part_name = "recovery";
+		} else {
+			part_name = "recovery";
+		}
 		g_dtbo_load_src = DTBO_FROM_RECOVERY;
 	}
 #endif  // MTK_AB_OTA_UPDATER

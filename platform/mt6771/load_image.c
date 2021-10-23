@@ -299,7 +299,7 @@ static int mboot_common_load_part_info(char *part_name,
 			break;
 		}
 
-		pal_log_err("\n=========================================\n");
+		pal_log_err("=========================================\n");
 		pal_log_err("[%s] %s magic number : 0x%x\n", MODULE_NAME, part_name,
 			part_hdr->info.magic);
 		part_hdr->info.name[31] = '\0'; //append end char
