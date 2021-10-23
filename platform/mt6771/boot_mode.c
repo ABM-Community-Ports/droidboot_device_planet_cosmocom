@@ -141,7 +141,7 @@ void boot_mode_select(void)
 		Set_Clr_RTC_PDN1_bit13(false);
 		return;
 	}
-	/*If forbidden mode is factory, cacel the factory key detection*/
+	/*If forbidden mode is factory, cancel the factory key detection*/
 	if (g_boot_arg->sec_limit.magic_num == 0x4C4C4C4C) {
 		if (g_boot_arg->sec_limit.forbid_mode == F_FACTORY_MODE) {
 			//Forbid to enter factory mode
@@ -168,7 +168,7 @@ void boot_mode_select(void)
 	}
 	ulong begin = get_timer(0);
 
-	/*we put key dectection here to detect key which is pressed*/
+	/*we put key detection here to detect key which is pressed*/
 	dprintf(INFO, "eng build\n");
 	while (get_timer(begin)<50) {
 

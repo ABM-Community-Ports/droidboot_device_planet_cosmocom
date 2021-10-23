@@ -99,7 +99,7 @@ ssize_t partition_read_emmc_ufs(const char *part_name, off_t offset, u8* data, s
 	return len;
 }
 
-/* dummy parameter is for prameter alignment */
+/* dummy parameter is for parameter alignment */
 ssize_t partition_write_emmc_ufs(const char *part_name, off_t offset, u8* data, size_t size)
 {
 	ssize_t len;

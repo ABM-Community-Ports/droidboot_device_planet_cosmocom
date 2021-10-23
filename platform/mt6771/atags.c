@@ -729,7 +729,7 @@ int target_fdt_model(void *fdt)
 	dprintf(CRITICAL, "[LK] segment = 0x%x\n", segment);
 
 	/**********************************************************************
-	* Use nodeoffset=0, becuase model name is at the begin of device tree.
+	* Use nodeoffset=0, because model name is at the begin of device tree.
 	**********************************************************************/
 	int len = 0, nodeoffset = 0;
 	char *prop_name = "model";

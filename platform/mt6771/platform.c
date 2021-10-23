@@ -712,7 +712,7 @@ if(kernel_charging_boot() != 1 && g_boot_mode != ALARM_BOOT &&
 	PROFILING_END();
 
 	PROFILING_START("disp init");
-	/* initialize the frame buffet information */
+	/* initialize the frame buffer information */
 	g_fb_size = mt_disp_get_vram_size();
 	g_fb_base = mblock_reserve_ext(&g_boot_arg->mblock_info, g_fb_size, 0x10000, 0x80000000, 0, "framebuffer");
 	if (!g_fb_base) {
@@ -732,7 +732,7 @@ if(kernel_charging_boot() != 1 && g_boot_mode != ALARM_BOOT &&
 	mt_disp_init((void *)g_fb_base);
 	PROFILING_END();
 
-	PROFILING_START("vedio init");
+	PROFILING_START("video init");
 	drv_video_init();
 	PROFILING_END();
 #endif
@@ -1119,7 +1119,7 @@ u32 get_devinfo_with_index(u32 index)
 int platform_skip_hibernation(void)
 {
 	switch (g_boot_arg->boot_reason) {
-#if 0 // let schedule power on to go hiberantion bootup process
+#if 0 // let schedule power on to go hibernation bootup process
 		case BR_RTC:
 #endif
 		case BR_WDT:
