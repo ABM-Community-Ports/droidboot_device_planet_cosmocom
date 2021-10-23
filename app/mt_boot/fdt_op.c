@@ -293,11 +293,11 @@ int bldr_load_dtb(char *boot_load_partition)
 	struct bootimg_hdr *p_boot_hdr;
 	char part_name[64];
 	uint64_t recovery_dtbo_offset = 0;
-	char *bootp;
+	char *rec2_bootp;
 
-	partition_get_name(partition_get_bootable(PartBoot2Num), &bootp);
+	partition_get_name(partition_get_bootable(PartBoot2Num), &rec2_bootp);
 
-	pal_log_err("ZBOOT FDT bldr_load_dtb from %s\n", boot_load_partition);
+	pal_log_err("ZBOOT FDT bldr_load_dtb from: %s, rec2: %s\n", boot_load_partition, rec2_bootp);
 
 	ptr = malloc(DTB_MAX_SIZE);
 	if (ptr == NULL) {
@@ -331,7 +331,7 @@ int bldr_load_dtb(char *boot_load_partition)
 	dtb_kernel_addr = p_boot_hdr->tags_addr;
 
 	/* Under recovery, get dtbo info from bootimg hdr version 1 */
-	if (strcmp(part_name, "recovery") == 0 || strcmp(part_name, bootp) == 0) {
+	if (strcmp(part_name, "recovery") == 0 || ((rec2_bootp>0) && strcmp(part_name, rec2_bootp) == 0)) {
 		if (p_boot_hdr->header_version == BOOT_HEADER_VERSION_ONE) {
 			recovery_dtbo_offset = (uint64_t)p_boot_hdr->recovery_dtbo_offset;
 			pal_log_err("bldr_load_dtb: recovery_dtbo_offset = 0x%llx\n", (uint64_t)recovery_dtbo_offset);
@@ -435,7 +435,7 @@ int bldr_load_dtb(char *boot_load_partition)
 	/* load odmdtbo and overlay */
 	ret = dtb_overlay(g_fdt, DTB_MAX_SIZE, (uint64_t)recovery_dtbo_offset);
 	if (ret == TRUE) {
-		if (strcmp(part_name, "recovery") == 0 || strcmp(part_name, bootp) == 0) {
+		if (strcmp(part_name, "recovery") == 0 || ((rec2_bootp>0) && strcmp(part_name, rec2_bootp) == 0)) {
 			set_recovery_dtbo_loaded();
 			pal_log_err("dtb_overlay for recovery done !\n");
 		}

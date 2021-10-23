@@ -574,7 +574,7 @@ char* partition_get_real_name(const char *part_name)
 
 int partition_exists(const char *part_name)
 {
-	if (memcmp(part_name, lvm_lv_prefix, strlen(lvm_lv_prefix)) == 0) {
+	if (memcmp(part_name, lvm_lv_prefix, sizeof(lvm_lv_prefix)) == 0) {
 		if (lv_exists_with_lv_name(part_name)) {
 			return PART_OK;
 		} else {

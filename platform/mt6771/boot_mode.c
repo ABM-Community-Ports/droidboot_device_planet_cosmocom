@@ -27,12 +27,14 @@
 /*This file implements MTK boot mode.*/
 
 #include <sys/types.h>
+#include <string.h>
 #include <debug.h>
 #include <err.h>
 #include <reg.h>
 #include <platform/mt_gpio.h>
 #include <platform/mt_typedefs.h>
 #include <platform/boot_mode.h>
+#include <part_interface.h>
 #include <platform/mt_reg_base.h>
 #include <target/cust_key.h>
 #include <meta.h>
@@ -48,7 +50,7 @@
 // global variable for specifying boot mode (default = NORMAL)
 extern  int unshield_recovery_detection(void);
 extern  void mtk_wdt_disable(void);
-extern  void boot_mode_menu_select();
+void boot_mode_menu_select();
 BOOTMODE g_boot_mode = NORMAL_BOOT;
 int advancedBootMode = NORMAL_BOOT;
 #ifdef MTK_KERNEL_POWER_OFF_CHARGING
@@ -288,9 +290,9 @@ void boot_mode_select(void)
 	char *userdataPartition;
 	partition_get_name(partition_get_bootable(PartBoot2Num), &userdataPartition);
 	if (strcmp(userdataPartition, "userdata") == 0)
-		dprintf(CRITICAL, "Detected single-boot Cosmo - partition 38: %s\n", userdataPartition);
+		dprintf(CRITICAL, "Detected single-boot Cosmo - partition %d: %s\n", partition_get_bootable(PartBoot2Num), userdataPartition);
 	else {
-		dprintf(CRITICAL, "Detected multi-boot Cosmo - partition 38: %s\n", userdataPartition);
+		dprintf(CRITICAL, "Detected multi-boot Cosmo - partition %d: %s\n", partition_get_bootable(PartBoot2Num), userdataPartition);
 		mtk_wdt_disable();
 		/*************************/
 		mt65xx_backlight_on();

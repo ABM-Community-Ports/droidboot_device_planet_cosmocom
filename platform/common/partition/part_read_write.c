@@ -6,7 +6,7 @@
 ssize_t partition_read(const char *part_name, off_t offset, u8 *data, size_t size) {
 	pal_log_info("%s part_name: %s, offset: %lld, size: %zu\n", __func__, part_name, offset, size);
 
-	if (memcmp(part_name, lvm_lv_prefix, strlen(lvm_lv_prefix)) == 0) {
+	if (memcmp(part_name, lvm_lv_prefix, sizeof(lvm_lv_prefix)) == 0) {
 		return partition_read_lvm(part_name, offset, data, size);
 	} else {
 		return partition_read_emmc_ufs(part_name, offset, data, size);

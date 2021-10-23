@@ -486,7 +486,7 @@ int lvm_detect() {
 }
 
 bool lv_is_bootable(const struct disk_lv *lv) {
-	int prefix_len = strlen(lvm_lv_prefix);
+	int prefix_len = sizeof(lvm_lv_prefix);
 	char *lvname= lv->name + prefix_len;
 	return lv->name && lv->visible &&
 		   (memcmp(lvname, "boot_", strlen("boot_")) == 0 ||

@@ -171,11 +171,11 @@ bool hall_state_open() {
 	return mt_get_gpio_in(GPIO8 | 0x80000000);
 }
 
-static bool skip_boot_option(char* boot) {
+static bool skip_boot_option(const char* boot) {
 	return (strncmp("EMPTY",boot,strlen("EMPTY")) == 0);
 }
 
-static int print_boot_option(int index, int count, char* boot, int select, int last_boot_select)
+static int print_boot_option(int index, int count, const char* boot, int select, int last_boot_select)
 {
 	if (!skip_boot_option(boot)) {
 		video_printf("[%d] %s boot", count, boot);
@@ -216,7 +216,7 @@ void boot_mode_menu_select()
 	}
 
 	last_boot_select = (get_env(LAST_BOOT_SELECT) == NULL) ? 0 : atoi(get_env(LAST_BOOT_SELECT));
-	if (last_boot_select >= 0 && last_boot_select < (6+lvm_boot_lvs_count)) {
+	if (last_boot_select >= 0 && last_boot_select < (5+lvm_boot_lvs_count)) {
 		select = last_boot_select;
 	}
 
